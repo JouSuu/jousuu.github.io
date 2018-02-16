@@ -8,36 +8,29 @@
     <title>wave - JouSuu - 浄数</title>
     <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
     <script id="shader-vs" type="x-shader/x-vertex">
-    attribute vec3 pos;
-    uniform mat4 mvp;
-    attribute vec2 a_texCoord;
-    varying vec2 v_texCoord;
+    attribute vec3 v_pos;
+    uniform mat4 u_wvp;
     void main(void)
     {
-        v_texCoord = a_texCoord;
-        gl_Position = mvp * vec4(pos,1.0);
+        gl_Position = u_wvp * vec4(v_pos,1.0);
     }
     </script>
     <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
-    uniform sampler2D u_image;
-    varying vec2 v_texCoord;
     uniform vec2 resolution;
+    uniform vec3 u_color;
     uniform float time;
     void main(void)
     {
-        vec2 pos = ( gl_FragCoord.xy / resolution.xy );
-
-        float col = abs(sin(time));
-        col = pos.x;
-        //col = pos.x*0.5 + pos.y*0.5;
-        //gl_FragColor = vec4(col,col,col,1);
-        gl_FragColor = texture2D(u_image, v_texCoord);
+        //vec2 pos = ( gl_FragCoord.xy / resolution.xy );
+        //gl_FragColor = vec4(0,0,pos.x*0.5 + abs(sin(time)),1);
+        gl_FragColor = vec4(u_color,1);
     }
     </script>
     <script src="sketch.js" type="text/javascript"></script>
 </head>
 <body style="background: #000;">
   <canvas id="glcanvas"></canvas>
+  </br><font color="red">x </font><font color="green">y </font><font color="blue">z</font>
 </body>
 </html>
