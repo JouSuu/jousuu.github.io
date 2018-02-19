@@ -5,9 +5,9 @@
     <meta name="viewport" content="height=device-height,width=device-width" />
     <meta name="viewport" content="initial-scale=1.0" />
     <meta name="HandheldFriendly" content="true"/>
-    <title>wave - JouSuu - 浄数</title>
+    <title>ultrasimple - JouSuu</title>
     <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
-    <script id="shader-vs" type="x-shader/x-vertex">
+    <script id="shader-vs" type="vertex-shader">
     attribute vec3 v_pos;
     uniform mat4 u_wvp;
     void main(void)
@@ -15,7 +15,7 @@
         gl_Position = u_wvp * vec4(v_pos,1.0);
     }
     </script>
-    <script id="shader-fs" type="x-shader/x-fragment">
+    <script id="shader-fs" type="fragment-shader">
     precision mediump float;
     uniform vec2 resolution;
     uniform vec3 u_color;
@@ -27,6 +27,27 @@
         gl_FragColor = vec4(u_color,1);
     }
     </script>
+
+
+    <script id="SimpleUnlitShader-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    uniform mat4 u_wvp;
+    void main(void)
+    {
+        gl_Position = u_wvp * vec4(v_pos,1.0);
+    }
+    </script>
+
+    <script id="SimpleUnlitShader-fs" type="fragment-shader">
+    precision mediump float;
+    uniform vec3 u_color;
+    void main(void)
+    {
+        gl_FragColor = vec4(u_color,1);
+    }
+    </script>
+
+
     <script src="sketch.js" type="text/javascript"></script>
 </head>
 <body style="background: #000;">
