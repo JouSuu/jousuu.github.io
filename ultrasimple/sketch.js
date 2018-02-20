@@ -22,14 +22,17 @@ var BG_COLOR = [0.61,0.45,0.15];
 // Class
 class GameObject
 {
-  constructor(pos,program,vertexBuff,vertLength,normalBuff)
+  constructor(program,vertexBuff,vertLength,normalBuff)
   {
-    this.pos = pos;
     this.prg = program;
     this.vertexBuff = vertexBuff;
     this.vertLength = vertLength;
     this.normalBuff = normalBuff;
     this.scale = 1;
+    this.pos = [0,0,0];
+    this.color = [1,1,1];
+    this.ambientLightIntensity = 0.5;
+    this.rot = [0,0,0];
   }
   draw(vp,dirLightDirection)
   {
@@ -43,16 +46,20 @@ class GameObject
     var wvp_rect = mat4.create();
     var rectPos = [0,0,0];
     mat4.translate(world_rect,world_rect,this.pos);
+    mat4.rotate(world_rect,world_rect,this.rot[0],this.rot)
     mat4.scale(world_rect,world_rect,[this.scale,this.scale,this.scale]);
     mat4.multiply(wvp_rect,vp,world_rect);
 
-    // matrix to shader
+    //　parameters to shader
     var u_wvp = gl.getUniformLocation(this.prg, 'u_wvp');
     gl.uniformMatrix4fv(u_wvp,false,wvp_rect);
     gl.uniform3fv(gl.getUniformLocation(this.prg,'v_dirLight'), dirLightDirection);
+    gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),this.color[0],this.color[1],this.color[2]);
+    gl.uniform1f(gl.getUniformLocation(this.prg,"u_ambientLight"), this.ambientLightIntensity);
+    
 
     // Draw
-    gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),1.0,1,0);
+    
     gl.drawArrays(gl.TRIANGLES,0,this.vertLength/3);
   }
 }
@@ -191,14 +198,8 @@ var prg = createProgram(gl,vertShader,fragShader);
 var buff = createBuffer(vertices);
 var normal_buff = createBuffer(normals);
 
+var box_old = new GameObject(prg,buff,vertices.length,normal_buff);
 
-var boxes = [];
-for(var i=0;i<400;i++)
-{
-    var box = new GameObject([0,0,0],prg,buff,vertices.length,normal_buff);
-    box.scale = 0.1;
-    boxes.push(box);
-}
 
 
 
@@ -241,8 +242,10 @@ function update()
     // camera
     var eyePos = vec3.create();
     vec3.set(eyePos,2.5,2,3);
+    //vec3.set(eyePos,6.5,7,2.5);
     var centerPos = vec3.create();
     vec3.set(centerPos,0,0,0);
+    //vec3.set(centerPos,3,3,0);
 
     // wheel actions
     vec3.add(eyePos,eyePos,[_wheelMoveOffs[0]*0.01,-_wheelMoveOffs[1]*0.01,0]);
@@ -265,19 +268,7 @@ function update()
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
     lightDir = [-0.4,-1,-0.6];
 
-
-
-    var posOffs = 0.12;
-    for(var y=0;y<20;y++)
-    {
-        for(var x=0;x<20;x++)
-        {
-            var idx = y*20 + x;
-            boxes[idx].pos = [x*posOffs + sin(x*0.1+dt*0.005)*0.1,y*posOffs, + cos(y*0.1+dt*0.0015)*0.3];
-            boxes[idx].draw(vp,lightDir);
-            
-        }
-    }
+    box_old.draw(vp,lightDir);
 
     // Draw axis
     arrow([0.5,0,0],[1,0,0],1,[1,0,0]);
