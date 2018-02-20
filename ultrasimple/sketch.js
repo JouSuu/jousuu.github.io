@@ -34,14 +34,13 @@ class GameObject
     this.ambientLightIntensity = 0.5;
     this.rot = [0,1,0];
   }
+  
   draw(vp,dirLightDirection)
   {
     // set attribute
-    /*
     gl.useProgram(this.prg);
     setAttribute(gl,this.prg,this.vertexBuff,"v_pos",3);
     setAttribute(gl,this.prg,this.normalBuff,"a_normal",3);
-    */
 
     // model matrix
     var world_rect = mat4.create();
@@ -357,8 +356,7 @@ function update(image)
 
     // texture
     gl.useProgram(box_old.prg);
-    setAttribute(gl,box_old.prg,box_old.vertexBuff,"v_pos",3);
-    setAttribute(gl,box_old.prg,box_old.normalBuff,"a_normal",3);
+
 
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.uniform1i(gl.getUniformLocation(prg, 'texture'), 0);
