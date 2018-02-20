@@ -33,8 +33,30 @@ class GameObject
     this.color = [1,1,1];
     this.ambientLightIntensity = 0.5;
     this.rot = [0,1,0];
+    this.texture;
+    this.textureCoordBuff;
+    this.textureAttatched = false;
   }
-  
+
+  setUpTexture(image,texCoord)
+  {
+    this.textureCoordBuff = createBuffer(texCoord);
+
+    // create texture
+    gl.activeTexture(gl.TEXTURE0);
+
+    this.texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    this.textureAttatched = true;
+  }
+
+
   draw(vp,dirLightDirection)
   {
     // set attribute
@@ -57,10 +79,22 @@ class GameObject
     gl.uniform3fv(gl.getUniformLocation(this.prg,'v_dirLight'), dirLightDirection);
     gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),this.color[0],this.color[1],this.color[2]);
     gl.uniform1f(gl.getUniformLocation(this.prg,"u_ambientLight"), this.ambientLightIntensity);
+
     
+    
+    if(this.textureAttatched)
+    {
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(gl.getUniformLocation(this.prg, 'texture'), 0);
+        setAttribute(gl,this.prg,this.textureCoordBuff,"a_texCoord",3);
+        gl.uniform1f(gl.getUniformLocation(this.prg,"u_ifTexReadyThisIsOne"),1.0);
+    }
+    else
+    {
+        gl.uniform1f(gl.getUniformLocation(this.prg,"u_ifTexReadyThisIsOne"),0);
+    }
 
     // Draw
-    
     gl.drawArrays(gl.TRIANGLES,0,this.vertLength/3);
   }
 }
@@ -174,8 +208,6 @@ var normals =
     0.0, -1.0, 0.0,
 ];
 
-
-
 var texCoord = 
 [
 
@@ -248,20 +280,12 @@ var gl = canvas.getContext('webgl');
 gl.enable(gl.DEPTH_TEST);
 
 
-
-
-
-
 // Shader , Program , Buffer
 var vertShader = createShader(gl,"shader-vs",gl.VERTEX_SHADER);
 var fragShader = createShader(gl,"shader-fs",gl.FRAGMENT_SHADER);
 var prg = createProgram(gl,vertShader,fragShader);
 var buff = createBuffer(vertices);
 var normal_buff = createBuffer(normals);
-
-var box_old = new GameObject(prg,buff,vertices.length,normal_buff);
-
-
 
 
 // Lines
@@ -275,7 +299,6 @@ var lineVertices =
     0.45,-0.03,0.0,
 
 ];
-
 
 
 
@@ -293,36 +316,76 @@ var prg_line = createProgram(gl,vs_line,fs_line);
 var lineBuff = createBuffer(lineVertices);
 
 
+
+// model and texture
+var box_old = new GameObject(prg,buff,vertices.length,normal_buff);
+box_old.scale = 0.5;
+box_old.color = [0,0,1];
+box_old.pos = [0,0,2];
+
+var box_wall = new GameObject(prg,buff,vertices.length,normal_buff);
+box_wall.pos = [1,0,0];
+
+var box_grass = new GameObject(prg,buff,vertices.length,normal_buff);
+box_grass.pos = [0,1,0];
+
 // texture
 var image = new Image();
-var texture;
 image.src = "ok.png";
-var textureCoordBuff = createBuffer(texCoord);
 
+var image_grass = new Image();
+image_grass.src = "grass.png";
+
+var image_wall = new Image();
+image_wall.src = "wall.png";
+
+var imgReady = [false,false,false,];
 image.onload = function()
 {
-
-    // create texture
-    gl.activeTexture(gl.TEXTURE0);
-
-    texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-    // start update loop after all images are ready
-    update(image);
+    box_old.setUpTexture(image,texCoord);
+    imgReady[0] = true;
 }
 
+image_grass.onload = function()
+{
+    box_grass.setUpTexture(image_grass,texCoord);
+    imgReady[1] = true;
+}
+
+image_wall.onload = function()
+{
+    box_wall.setUpTexture(image_wall,texCoord);
+    imgReady[2] = true;
+}
+
+loading();
 
 
+
+var callBackId;
+function loading()
+{
+    var ready = true;
+    for(var i=0;i<imgReady.length;i++)
+    {
+        if(imgReady[i] == false)
+            ready = false;
+    }
+
+    if(ready)
+    {
+        cancelAnimationFrame(callBackId);
+        update();
+        return;
+    }
+
+    callBackId = requestAnimationFrame(loading);
+}
+
+//update();
 
 // Update
-function update(image)
+function update()
 {
     // camera
     var eyePos = vec3.create();
@@ -354,19 +417,15 @@ function update(image)
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
     lightDir = [-0.4,-1,-0.6];
 
-    // texture
-    gl.useProgram(box_old.prg);
 
 
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(gl.getUniformLocation(prg, 'texture'), 0);
-    setAttribute(gl,box_old.prg,textureCoordBuff,"a_texCoord",3);
 
 
     // draw box
-    box_old.scale = 2;
-    box_old.color = [0,0,1];
     box_old.draw(vp,lightDir);
+    box_wall.draw(vp,lightDir);
+    box_grass.draw(vp,lightDir);
+
 
     // Draw axis
     arrow([0.5,0,0],[1,0,0],1,[1,0,0]);

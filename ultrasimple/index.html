@@ -30,15 +30,19 @@
     varying vec2 v_texCoord;
     uniform float u_ambientLight;
     uniform sampler2D texture;
+    uniform float u_ifTexReadyThisIsOne;
     void main(void)
     {
         //vec2 pos = ( gl_FragCoord.xy / resolution.xy );
         //gl_FragColor = vec4(0,0,pos.x*0.5 + abs(sin(time)),1);
         float col = clamp(-dot(v_dirLight,v_normal),0.2,0.95);
-        vec3 textureCol = vec3(texture2D(texture, v_texCoord));
+        //vec3 textureCol = vec3(texture2D(texture, v_texCoord));
         //gl_FragColor = vec4(u_color*0.1 + textureCol*0.8 + vec3(col)*0.7,1)*0.8;
 
-        gl_FragColor = texture2D(texture, v_texCoord);
+        if(u_ifTexReadyThisIsOne == 1.0)
+            gl_FragColor = texture2D(texture, v_texCoord);
+        else
+            gl_FragColor = vec4(col,col,col,1);
         //gl_FragColor = vec4(gl_FragCoord.x/resolution.x,gl_FragCoord.y,0,1);
     }
     </script>
