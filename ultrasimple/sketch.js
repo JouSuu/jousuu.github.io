@@ -1,6 +1,7 @@
+"use strict";
+
 window.onload = function()
 {
-
 // Define
 var _W = 450;
 var _H = 450;
@@ -18,7 +19,6 @@ var _wheelScrollOffs = 1; // float for mousemove wheel camera
 var _wheelMoveOffs = [0,0]; // vec2 for wheelmove camera
 var BG_COLOR = [0.61,0.45,0.15];
 
-
 // Class
 class GameObject
 {
@@ -32,21 +32,23 @@ class GameObject
     this.pos = [0,0,0];
     this.color = [1,1,1];
     this.ambientLightIntensity = 0.5;
-    this.rot = [0,0,0];
+    this.rot = [0,1,0];
   }
   draw(vp,dirLightDirection)
   {
     // set attribute
+    /*
     gl.useProgram(this.prg);
     setAttribute(gl,this.prg,this.vertexBuff,"v_pos",3);
     setAttribute(gl,this.prg,this.normalBuff,"a_normal",3);
+    */
 
     // model matrix
     var world_rect = mat4.create();
     var wvp_rect = mat4.create();
     var rectPos = [0,0,0];
     mat4.translate(world_rect,world_rect,this.pos);
-    mat4.rotate(world_rect,world_rect,this.rot[0],this.rot)
+    mat4.rotate(world_rect,world_rect,0,this.rot)
     mat4.scale(world_rect,world_rect,[this.scale,this.scale,this.scale]);
     mat4.multiply(wvp_rect,vp,world_rect);
 
@@ -173,6 +175,66 @@ var normals =
     0.0, -1.0, 0.0,
 ];
 
+
+
+var texCoord = 
+[
+
+    // front side
+    1.0, 0.0, 0,
+    0.0, 0.0, 0,
+    1.0, 1.0, 0,
+
+    1.0, 1.0, 0,
+    0.0, 0.0, 0,
+    0.0, 1.0, 0,
+
+    // back side
+    1.0, 1.0, 0,
+    1.0, 0.0, 0,
+    0.0, 0.0, 0,
+
+    0.0, 0.0, 0,
+    0.0, 1.0, 0,
+    1.0, 1.0, 0,
+
+    // right side
+    0.0, 1.0, 0,
+    1.0, 1.0, 0,
+    1.0, 0.0, 0,
+
+    1.0, 0.0, 0,
+    0.0, 1.0, 0,
+    0.0, 0.0, 0,
+
+    // left side
+    0.0, 0.0, 0,
+    0.0, 1.0, 0,
+    1.0, 1.0, 0,
+
+    0.0, 0.0, 0,
+    1.0, 1.0, 0,
+    1.0, 0.0, 0,
+
+    // top side
+    1.0, 1.0, 0,
+    0.0, 1.0, 0,
+    0.0, 0.0, 0,
+
+    1.0, 1.0, 0,
+    0.0, 0.0, 0,
+    1.0, 0.0, 0,
+
+    // bottom side
+    1.0, 1.0, 0,
+    1.0, 0.0, 0,
+    0.0, 1.0, 0,
+
+    0.0, 1.0, 0,
+    0.0, 0.0, 0,
+    1.0, 0.0, 0,
+];
+
 // Init
 var canvas = document.querySelector('#glcanvas');
 canvas.addEventListener('mousedown', onMouseDown, false);
@@ -232,12 +294,36 @@ var prg_line = createProgram(gl,vs_line,fs_line);
 var lineBuff = createBuffer(lineVertices);
 
 
+// texture
+var image = new Image();
+var texture;
+image.src = "ok.png";
+var textureCoordBuff = createBuffer(texCoord);
 
-// start update Loop
-update();
+image.onload = function()
+{
+
+    // create texture
+    gl.activeTexture(gl.TEXTURE0);
+
+    texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    // start update loop after all images are ready
+    update(image);
+}
+
+
+
 
 // Update
-function update()
+function update(image)
 {
     // camera
     var eyePos = vec3.create();
@@ -265,9 +351,23 @@ function update()
     gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // light
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
     lightDir = [-0.4,-1,-0.6];
 
+    // texture
+    gl.useProgram(box_old.prg);
+    setAttribute(gl,box_old.prg,box_old.vertexBuff,"v_pos",3);
+    setAttribute(gl,box_old.prg,box_old.normalBuff,"a_normal",3);
+
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(prg, 'texture'), 0);
+    setAttribute(gl,box_old.prg,textureCoordBuff,"a_texCoord",3);
+
+
+    // draw box
+    box_old.scale = 2;
+    box_old.color = [0,0,1];
     box_old.draw(vp,lightDir);
 
     // Draw axis

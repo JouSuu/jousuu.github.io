@@ -11,10 +11,13 @@
     attribute vec3 a_normal;
     uniform mat4 u_wvp;
     varying vec3 v_normal;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
     void main(void)
     {
         gl_Position = u_wvp * vec4(v_pos,1.0);
         v_normal = a_normal;
+        v_texCoord = a_texCoord;
     }
     </script>
     <script id="shader-fs" type="fragment-shader">
@@ -24,14 +27,18 @@
     uniform vec3 v_dirLight;
     varying vec3 v_normal;
     //uniform float time;
+    varying vec2 v_texCoord;
     uniform float u_ambientLight;
+    uniform sampler2D texture;
     void main(void)
     {
         //vec2 pos = ( gl_FragCoord.xy / resolution.xy );
         //gl_FragColor = vec4(0,0,pos.x*0.5 + abs(sin(time)),1);
-        //float col = clamp(dot(v_normal,v_dirLight),0.2,0.95);
         float col = clamp(-dot(v_dirLight,v_normal),0.2,0.95);
-        gl_FragColor = vec4(u_color*vec3(col),1) + vec4(u_ambientLight);
+        vec3 textureCol = vec3(texture2D(texture, v_texCoord));
+        //gl_FragColor = vec4(u_color*0.1 + textureCol*0.8 + vec3(col)*0.7,1)*0.8;
+
+        gl_FragColor = texture2D(texture, v_texCoord);
         //gl_FragColor = vec4(gl_FragCoord.x/resolution.x,gl_FragCoord.y,0,1);
     }
     </script>
