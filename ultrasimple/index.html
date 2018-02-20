@@ -6,7 +6,6 @@
     <meta name="viewport" content="initial-scale=1.0" />
     <meta name="HandheldFriendly" content="true"/>
     <title>ultrasimple - JouSuu</title>
-    <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
     <script id="shader-vs" type="vertex-shader">
     attribute vec3 v_pos;
     attribute vec3 a_normal;
@@ -20,16 +19,17 @@
     </script>
     <script id="shader-fs" type="fragment-shader">
     precision mediump float;
-    uniform vec2 resolution;
+    //uniform vec2 resolution;
     uniform vec3 u_color;
     uniform vec3 v_dirLight;
     varying vec3 v_normal;
-    uniform float time;
+    //uniform float time;
     void main(void)
     {
         //vec2 pos = ( gl_FragCoord.xy / resolution.xy );
         //gl_FragColor = vec4(0,0,pos.x*0.5 + abs(sin(time)),1);
-        float col = clamp(dot(v_normal,v_dirLight),0.2,0.95);
+        //float col = clamp(dot(v_normal,v_dirLight),0.2,0.95);
+        float col = clamp(-dot(v_dirLight,v_normal),0.2,0.95);
         gl_FragColor = vec4(0,0,0,1) + vec4(col,col,col,0);
         //gl_FragColor = vec4(gl_FragCoord.x/resolution.x,gl_FragCoord.y,0,1);
     }
@@ -54,7 +54,7 @@
     }
     </script>
 
-
+    <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
     <script src="sketch.js" type="text/javascript"></script>
 </head>
 <body style="background: #000;">

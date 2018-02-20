@@ -2,8 +2,8 @@ window.onload = function()
 {
 
 // Define
-var _W = 300;
-var _H = 300;
+var _W = 450;
+var _H = 450;
 var _StartTime = Date.now();
 var FPS = 60;
 var abs = Math.abs;
@@ -16,28 +16,46 @@ var COLOR_BLUE = [0,0,1,1];
 var _mouseMoveOffs = mat4.create(); // matrix for mousemove camera
 var _wheelScrollOffs = 1; // float for mousemove wheel camera
 var _wheelMoveOffs = [0,0]; // vec2 for wheelmove camera
-
-// Init
-var canvas = document.querySelector('#glcanvas');
-canvas.addEventListener('mousedown', onMouseDown, false);
-canvas.addEventListener('mouseup', onMouseUp, false);
-canvas.addEventListener('mousemove', onMouseMove, false);
-canvas.addEventListener('mousewheel', onMouseWheel, false);
-
-canvas.width = _W;
-canvas.height = _H;
-var gl = canvas.getContext('webgl');
-gl.enable(gl.DEPTH_TEST);
+var BG_COLOR = [0.61,0.45,0.15];
 
 
-// Shader
-var vertShader = createShader(gl,"shader-vs",gl.VERTEX_SHADER);
-var fragShader = createShader(gl,"shader-fs",gl.FRAGMENT_SHADER);
+// Class
+class GameObject
+{
+  constructor(pos,program,vertexBuff,vertLength,normalBuff)
+  {
+    this.pos = pos;
+    this.prg = program;
+    this.vertexBuff = vertexBuff;
+    this.vertLength = vertLength;
+    this.normalBuff = normalBuff;
+    this.scale = 1;
+  }
+  draw(vp,dirLightDirection)
+  {
+    // set attribute
+    gl.useProgram(this.prg);
+    setAttribute(gl,this.prg,this.vertexBuff,"v_pos",3);
+    setAttribute(gl,this.prg,this.normalBuff,"a_normal",3);
 
+    // model matrix
+    var world_rect = mat4.create();
+    var wvp_rect = mat4.create();
+    var rectPos = [0,0,0];
+    mat4.translate(world_rect,world_rect,this.pos);
+    mat4.scale(world_rect,world_rect,[this.scale,this.scale,this.scale]);
+    mat4.multiply(wvp_rect,vp,world_rect);
 
-// Program
-var prg = createProgram(gl,vertShader,fragShader);
+    // matrix to shader
+    var u_wvp = gl.getUniformLocation(this.prg, 'u_wvp');
+    gl.uniformMatrix4fv(u_wvp,false,wvp_rect);
+    gl.uniform3fv(gl.getUniformLocation(this.prg,'v_dirLight'), dirLightDirection);
 
+    // Draw
+    gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),1.0,1,0);
+    gl.drawArrays(gl.TRIANGLES,0,this.vertLength/3);
+  }
+}
 
 
 // Vertex
@@ -97,24 +115,6 @@ var vertices =
     -0.5, -0.5, -0.5,   // Back-bottom-left
     0.5, -0.5, -0.5,    // Back-bottom-right
 ];
-/*
-[
-    -0.5, 0.5, 0.5,     // Front-top-left
-    0.5, 0.5, 0.5,      // Front-top-right
-    -0.5, -0.5, 0.5,    // Front-bottom-left
-    0.5, -0.5, 0.5,     // Front-bottom-right
-    0.5, -0.5, -0.5,    // Back-bottom-right
-    0.5, 0.5, 0.5,      // Front-top-right
-    0.5, 0.5, -0.5,     // Back-top-right
-    -0.5, 0.5, 0.5,     // Front-top-left
-    -0.5, 0.5, -0.5,    // Back-top-left
-    -0.5, -0.5, 0.5,    // Front-bottom-left
-    -0.5, -0.5, -0.5,   // Back-bottom-left
-    0.5, -0.5, -0.5,    // Back-bottom-right
-    -0.5, 0.5, -0.5,    // Back-top-left
-    0.5, 0.5, -0.5      // Back-top-right
-];
-*/
 var normals = 
 [
     // front side
@@ -166,6 +166,41 @@ var normals =
     0.0, -1.0, 0.0,
 ];
 
+// Init
+var canvas = document.querySelector('#glcanvas');
+canvas.addEventListener('mousedown', onMouseDown, false);
+canvas.addEventListener('mouseup', onMouseUp, false);
+canvas.addEventListener('mousemove', onMouseMove, false);
+canvas.addEventListener('mousewheel', onMouseWheel, false);
+
+canvas.width = _W;
+canvas.height = _H;
+
+var gl = canvas.getContext('webgl');
+gl.enable(gl.DEPTH_TEST);
+
+
+
+
+
+
+// Shader , Program , Buffer
+var vertShader = createShader(gl,"shader-vs",gl.VERTEX_SHADER);
+var fragShader = createShader(gl,"shader-fs",gl.FRAGMENT_SHADER);
+var prg = createProgram(gl,vertShader,fragShader);
+var buff = createBuffer(vertices);
+var normal_buff = createBuffer(normals);
+
+
+var boxes = [];
+for(var i=0;i<400;i++)
+{
+    var box = new GameObject([0,0,0],prg,buff,vertices.length,normal_buff);
+    box.scale = 0.1;
+    boxes.push(box);
+}
+
+
 
 // Lines
 var lineVertices = 
@@ -179,9 +214,7 @@ var lineVertices =
 
 ];
 
-// create and bind buffer by vertices
-var buff = createBuffer(vertices);
-var normal_buff = createBuffer(normals);
+
 
 
 // camera matrix
@@ -199,15 +232,20 @@ var lineBuff = createBuffer(lineVertices);
 
 
 
+// start update Loop
+update();
 
 // Update
 function update()
 {
     // camera
     var eyePos = vec3.create();
-    vec3.set(eyePos,1.2,1.6,1.5);
-    vec3.add(eyePos,eyePos,[_wheelMoveOffs[0]*0.01,-_wheelMoveOffs[1]*0.01,0]);
+    vec3.set(eyePos,2.5,2,3);
     var centerPos = vec3.create();
+    vec3.set(centerPos,0,0,0);
+
+    // wheel actions
+    vec3.add(eyePos,eyePos,[_wheelMoveOffs[0]*0.01,-_wheelMoveOffs[1]*0.01,0]);
     vec3.add(centerPos,centerPos,[_wheelMoveOffs[0]*0.01,-_wheelMoveOffs[1]*0.01,0]);
 
     vec3.scale(eyePos,eyePos,_wheelScrollOffs);
@@ -217,62 +255,39 @@ function update()
 
     // time and resolution to shader
     var dt = Date.now() - _StartTime;
-    gl.uniform1f(gl.getUniformLocation(prg,"time"), dt / 1000 );
-    gl.uniform2f(gl.getUniformLocation(prg,"resolution"),_W,_H);
+    //gl.uniform1f(gl.getUniformLocation(prg,"time"), dt / 1000 );
+    //gl.uniform2f(gl.getUniformLocation(prg,"resolution"),_W,_H);
 
-    // clear
-    var color_clear = 0.5;
-    gl.clearColor(color_clear,color_clear,color_clear,0.0);
+    // clear all
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // set attribute
-    gl.useProgram(prg);
-    setAttribute(gl,prg,buff,"v_pos",3);
-    setAttribute(gl,prg,normal_buff,"a_normal",3);
-
-
-    // model matrix
-    var world_rect = mat4.create();
-    var wvp_rect = mat4.create();
-    //mat4.rotate(world_rect,world_rect,dt*0.001,[1,0,0]);
-    var rectPos = [0,0,0];
-    mat4.translate(world_rect,world_rect,rectPos);
-    //mat4.scale(world_rect,world_rect,[0.2,0.2,0.2]);
-    mat4.multiply(wvp_rect,vp,world_rect);
-
-    // matrix to shader
-    var u_wvp = gl.getUniformLocation(prg, 'u_wvp');
-    gl.uniformMatrix4fv(u_wvp,false,wvp_rect);
-
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
-    gl.uniform3fv(gl.getUniformLocation(prg,'v_dirLight'), lightDir);
-
-    // Draw
-    gl.uniform3f(gl.getUniformLocation(prg,"u_color"),1.0,1,0);
-    //gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
-    gl.drawArrays(gl.TRIANGLES,0,vertices.length/3);
+    lightDir = [-0.4,-1,-0.6];
 
 
 
-    arrow([1.2,1.2,0],lightDir,0.6);
+    var posOffs = 0.12;
+    for(var y=0;y<20;y++)
+    {
+        for(var x=0;x<20;x++)
+        {
+            var idx = y*20 + x;
+            boxes[idx].pos = [x*posOffs + sin(x*0.1+dt*0.005)*0.1,y*posOffs, + cos(y*0.1+dt*0.0015)*0.3];
+            boxes[idx].draw(vp,lightDir);
+            
+        }
+    }
 
     // Draw axis
-    drawArrows();
-
-    
-
+    arrow([0.5,0,0],[1,0,0],1,[1,0,0]);
+    arrow([0,0.5,0],[0,1,0],1,[0,1,0]);
+    arrow([0,0,0.5],[0,0,1],1,[0,0,1]);
 
     gl.flush();
-
+    requestAnimationFrame(update);
 
 }
-
-(function(){
-    update();
-    setTimeout(arguments.callee,1000/FPS);
-})();
-
-
 
 
 
@@ -331,9 +346,11 @@ function setAttribute(gl,prg,buffer,name,stride)
     gl.enableVertexAttribArray(al);
 }
 
-
-function arrow(pos,target,scale)
+function arrow(pos,target,scale,color)
 {
+    if(color == undefined)
+        color = [1,1,1];
+
     gl.useProgram(prg_line);
 
     var world_line = mat4.create();
@@ -353,64 +370,11 @@ function arrow(pos,target,scale)
     var u_wvp = gl.getUniformLocation(prg_line, 'u_wvp');
     gl.uniformMatrix4fv(u_wvp,false,world_line);
 
-    gl.uniform3f(gl.getUniformLocation(prg_line,"u_color"),1.0,1,1);
+    gl.uniform3f(gl.getUniformLocation(prg_line,"u_color"),color[0],color[1],color[2]);
     setAttribute(gl,prg_line,lineBuff,"v_pos",3);
     gl.drawArrays(gl.LINES, 0, lineVertices.length/3);
 }
 
-function drawArrows()
-{
-    gl.useProgram(prg_line);
-
-    var world_line_x = mat4.create();
-    var wvp_line_x = mat4.create();
-    mat4.translate(world_line_x,world_line_x,[0.5,0,0]);
-    mat4.rotate(world_line_x,world_line_x,0,[1,0,0]);
-
-    mat4.multiply(wvp_line_x,vp,world_line_x);
-
-    var u_wvp = gl.getUniformLocation(prg_line, 'u_wvp');
-    gl.uniformMatrix4fv(u_wvp,false,wvp_line_x);
-
-    gl.uniform3f(gl.getUniformLocation(prg_line,"u_color"),1.0,0,0);
-    setAttribute(gl,prg_line,lineBuff,"v_pos",3);
-    gl.drawArrays(gl.LINES, 0, lineVertices.length/3);
-
-
-
-    var world_line_y = mat4.create();
-    var wvp_line_y = mat4.create();
-    mat4.translate(world_line_y,world_line_y,[0,0.5,0]);
-
-    mat4.rotate(world_line_y,world_line_y,glMatrix.toRadian(90),[0,0,1]);
-    mat4.rotate(world_line_y,world_line_y,glMatrix.toRadian(90),[1,0,0]);
-
-    mat4.multiply(wvp_line_y,vp,world_line_y);
-
-    var u_wvp = gl.getUniformLocation(prg_line, 'u_wvp');
-    gl.uniformMatrix4fv(u_wvp,false,wvp_line_y);
-
-    gl.uniform3f(gl.getUniformLocation(prg_line,"u_color"),0,1.0,0);
-    setAttribute(gl,prg_line,lineBuff,"v_pos",3);
-    gl.drawArrays(gl.LINES, 0, lineVertices.length/3);
-
-
-    var world_line_z = mat4.create();
-    var wvp_line_z = mat4.create();
-    mat4.translate(world_line_z,world_line_z,[0,0,0.5]);
-    mat4.rotate(world_line_z,world_line_z,glMatrix.toRadian(-90),[0,1,0]);
-    mat4.multiply(wvp_line_z,vp,world_line_z);
-
-    var u_wvp = gl.getUniformLocation(prg_line, 'u_wvp');
-    gl.uniformMatrix4fv(u_wvp,false,wvp_line_z);
-
-    gl.uniform3f(gl.getUniformLocation(prg_line,"u_color"),0,0,1);
-    setAttribute(gl,prg_line,lineBuff,"v_pos",3);
-    gl.drawArrays(gl.LINES, 0, lineVertices.length/3);
-
-
-    
-}
 
 // mouse and wheel handling functions
 var __mouseDownNow = false;
