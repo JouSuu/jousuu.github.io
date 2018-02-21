@@ -34,6 +34,21 @@ function audioStt()
     var source = audioContext.createBufferSource();
     sched = new WebAudioScheduler({ context: audioContext });
     sched.start(metronome);
+    var request = new XMLHttpRequest();
+request.open('GET', 'okl.mp3', true);
+request.responseType = 'arraybuffer';
+request.send();
+
+request.onload = function () {
+    var res = request.response;
+    audioContext.decodeAudioData(res, function (buf) {
+        source.buffer = buf;
+    });
+    setTimeout(startBgm, 900);
+};
+
+source.connect(audioContext.destination);
+source.start(0);
 }
 
 function startBgm()
