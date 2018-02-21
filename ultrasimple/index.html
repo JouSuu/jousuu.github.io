@@ -31,11 +31,12 @@
     uniform float u_ambientLight;
     uniform sampler2D texture;
     uniform float u_ifTexReadyThisIsOne;
+    uniform float u_beat;
     void main(void)
     {
         //vec2 pos = ( gl_FragCoord.xy / resolution.xy );
         //gl_FragColor = vec4(0,0,pos.x*0.5 + abs(sin(time)),1);
-        float col = clamp(-dot(v_dirLight,v_normal),0.2,0.95);
+        float col = clamp(-dot(v_dirLight,v_normal),0.2,0.95)*0.5 + u_beat;
         //vec3 textureCol = vec3(texture2D(texture, v_texCoord));
         //gl_FragColor = vec4(u_color*0.1 + textureCol*0.8 + vec3(col)*0.7,1)*0.8;
 
@@ -67,6 +68,7 @@
     </script>
 
     <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
+    <script src="../thirdlib/web-audio-scheduler.js" type="text/javascript"></script>
     <script src="sketch.js" type="text/javascript"></script>
 </head>
 <body style="background: #000; margin:3px;">

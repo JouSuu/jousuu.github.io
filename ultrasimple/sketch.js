@@ -2,6 +2,62 @@
 
 window.onload = function()
 {
+
+// sound
+var _beat = 0;
+var audioContext = new AudioContext();
+var buffer = null;
+var source = audioContext.createBufferSource();
+
+var request = new XMLHttpRequest();
+request.open('GET', 'okl.mp3', true);
+request.responseType = 'arraybuffer';
+request.send();
+
+request.onload = function () {
+    var res = request.response;
+    audioContext.decodeAudioData(res, function (buf) {
+        source.buffer = buf;
+    });
+    setTimeout(startBgm, 900);
+};
+
+source.connect(audioContext.destination);
+source.start(0);
+
+
+var sched = new WebAudioScheduler({ context: audioContext });
+function startBgm()
+{
+    sched.start(metronome);
+}
+
+function metronome(e) 
+{
+    var t0 = e.playbackTime;
+
+    sched.insert(t0 + 60/92 * 0, ticktack);
+    sched.insert(t0 + 60/92 * 1, ticktack, { frequency: 140, duration: 0.2 });
+    sched.insert(t0 + 60/92 * 2, ticktack, { frequency: 240, duration: 0.2 });
+    sched.insert(t0 + 60/92 * 3, ticktack, { frequency: 340, duration: 0.2 });
+    sched.insert(t0 + 60/92 * 4, metronome);
+}
+
+function ticktack(e) {
+    _beat = 0.2;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // Define
 var _W = 450;
 var _H = 450;
@@ -57,7 +113,7 @@ class GameObject
   }
 
 
-  draw(vp,dirLightDirection)
+  draw(vp,dirLightDirection,beat)
   {
     // set attribute
     gl.useProgram(this.prg);
@@ -79,6 +135,7 @@ class GameObject
     gl.uniform3fv(gl.getUniformLocation(this.prg,'v_dirLight'), dirLightDirection);
     gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),this.color[0],this.color[1],this.color[2]);
     gl.uniform1f(gl.getUniformLocation(this.prg,"u_ambientLight"), this.ambientLightIntensity);
+    gl.uniform1f(gl.getUniformLocation(this.prg,"u_beat"), beat);
 
     
     
@@ -346,19 +403,19 @@ image_wall.src = "wall.png";
 var imgReady = [false,false,false,];
 image.onload = function()
 {
-    box_old.setUpTexture(image,texCoord);
+    //box_old.setUpTexture(image,texCoord);
     imgReady[0] = true;
 }
 
 image_grass.onload = function()
 {
-    box_grass.setUpTexture(image_grass,texCoord);
+    //box_grass.setUpTexture(image_grass,texCoord);
     imgReady[1] = true;
 }
 
 image_wall.onload = function()
 {
-    box_wall.setUpTexture(image_wall,texCoord);
+    //box_wall.setUpTexture(image_wall,texCoord);
     imgReady[2] = true;
 }
 
@@ -393,7 +450,6 @@ function update()
 {
 
 
-
     // camera
     var eyePos = vec3.create();
     vec3.set(eyePos,2.5,2,3);
@@ -413,6 +469,9 @@ function update()
 
     // time and resolution to shader
     var dt = Date.now() - _StartTime;
+
+    _beat -= 0.006;
+
     //gl.uniform1f(gl.getUniformLocation(prg,"time"), dt / 1000 );
     //gl.uniform2f(gl.getUniformLocation(prg,"resolution"),_W,_H);
 
@@ -422,6 +481,7 @@ function update()
 
     /*------------------------*/
     // start frame buffer area
+    /*
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffAndTex.frameBuffer);
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -432,18 +492,20 @@ function update()
     
     // end frame buffer area
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    */
     /*------------------------*/
 
 
     // clear all
-    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
+    gl.clearColor(BG_COLOR[0]+_beat,BG_COLOR[1],BG_COLOR[2]+_beat,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-
-    gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
+    box_old.draw(vp,lightDir,_beat);
+    box_wall.draw(vp,lightDir,_beat);
+    //gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
     // draw box
-    box_grass.texture = frameBuffAndTex.texture;
-    box_grass.draw(vp,lightDir);
+    //box_grass.texture = frameBuffAndTex.texture;
+    box_grass.draw(vp,lightDir,_beat);
 
 
     // Draw axis

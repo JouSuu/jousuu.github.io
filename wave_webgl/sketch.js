@@ -42,19 +42,16 @@ var vertices =
 
 var texCoord =
 [
-    0,1,
-    1,0,
-    1,1,
-    0,1,
+    0.0,1.0,
+    0.0,0.0,
+    1.0,1.0,
+    1.0,1.0,
 ];
 
 var vertBuff = createBuffer(vertices);
 var texCoordBuff = createBuffer(texCoord);
 var frameBuffAndTex_wave_1 = createFrameBufferAndTexture(_W,_H);
-var frameBuffAndTex_wave_2 = createFrameBufferAndTexture(_W,_H);
-var frameBuffAndTex_wave_3 = createFrameBufferAndTexture(_W,_H);
-var frameBuffAndTexes = [frameBuffAndTex_wave_1,frameBuffAndTex_wave_2,frameBuffAndTex_wave_3];
-var frameBuffInput = createFrameBufferAndTexture(_W,_H);
+var frameBuffInput_1 = createFrameBufferAndTexture(_W,_H);
 
 update();
 
@@ -69,10 +66,15 @@ for(var i=0;i<10;i++)
 function update()
 {
     var dt = Date.now() - _StartTime;
+
+    
+    /*------------------------*/
+    // draw input to texture
+    gl.useProgram(prg_input);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffInput_1.frameBuffer);
     gl.clearColor(0.2,0.2,0.2,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.useProgram(prg_input);
+    
     setAttribute(gl,prg_input,vertBuff,"v_pos",3);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_mousePos'), [mouseX,mouseY]);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_resolution'), [_W,_H]);
@@ -80,12 +82,28 @@ function update()
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
-/*
-    gl.bindTexture(gl.TEXTURE_2D, this.texture);
-    gl.uniform1i(gl.getUniformLocation(this.prg, 'texture'), 0);
-    setAttribute(gl,this.prg,this.textureCoordBuff,"a_texCoord",3);
-    gl.uniform1f(gl.getUniformLocation(this.prg,"u_ifTexReadyThisIsOne"),1.0);
-*/
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    /*------------------------*/
+
+
+    /*------------------------*/
+    // texture to buff
+    gl.useProgram(prg_test);
+    gl.clearColor(0.2,0.2,0.2,0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, frameBuffInput_1.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_test, 'texture'), 0);
+    setAttribute(gl,prg_test,vertBuff,"v_pos",3);
+    setAttribute(gl,prg_test,texCoordBuff,"a_texCoord",2);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
+    gl.flush();
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    /*------------------------*/
+
 
     requestAnimationFrame(update);
 }
@@ -150,7 +168,8 @@ function createFrameBufferAndTexture(w,h)
         
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, mouseClick);
+        
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
