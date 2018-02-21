@@ -5,9 +5,7 @@ window.onload = function()
 
 // sound
 var _beat = 0;
-var audioContext = new AudioContext();
-var buffer = null;
-var source = audioContext.createBufferSource();
+
 
 /*
 var request = new XMLHttpRequest();
@@ -27,8 +25,17 @@ source.connect(audioContext.destination);
 source.start(0);
 */
 
-var sched = new WebAudioScheduler({ context: audioContext });
-sched.start(metronome);
+function audioStt()
+{
+    console.log("tou");
+    document.write("arre");
+    var audioContext = new AudioContext();
+    var buffer = null;
+    var source = audioContext.createBufferSource();
+    var sched = new WebAudioScheduler({ context: audioContext });
+    sched.start(metronome);
+}
+
 function startBgm()
 {
     sched.start(metronome);
@@ -327,10 +334,11 @@ var texCoord =
 
 // Init
 var canvas = document.querySelector('#glcanvas');
-canvas.addEventListener('mousedown', onMouseDown, false);
+canvas.addEventListener('mousedown', audioStt, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousewheel', onMouseWheel, false);
+canvas.addEventListener('touchstart', audioStt, false);
 
 canvas.width = _W;
 canvas.height = _H;
