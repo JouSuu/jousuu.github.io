@@ -25,14 +25,14 @@ source.connect(audioContext.destination);
 source.start(0);
 */
 
+var sched;
 function audioStt()
 {
     console.log("tou");
-    document.write("arre");
     var audioContext = new AudioContext();
     var buffer = null;
     var source = audioContext.createBufferSource();
-    var sched = new WebAudioScheduler({ context: audioContext });
+    sched = new WebAudioScheduler({ context: audioContext });
     sched.start(metronome);
 }
 
