@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html  lang="en-US">
+<head> 
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="height=device-height,width=device-width" />
+    <meta name="viewport" content="initial-scale=1.0" />
+    <meta name="HandheldFriendly" content="true"/>
+    <title>ultrasimple - JouSuu</title>
+
+    <script id="simple-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    uniform mat4 u_wvp;
+    void main(void)
+    {
+        gl_Position = u_wvp * vec4(v_pos,1.0);
+    }
+    </script>
+
+    <script id="simple-fs" type="fragment-shader">
+    precision mediump float;
+    uniform vec3 u_color;
+    void main(void)
+    {
+        gl_FragColor = vec4(u_color,1);
+    }
+    </script>
+
+
+
+
+
+    <script id="input-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    void main(void)
+    {
+        gl_Position = vec4(v_pos,1.0);
+    }
+    </script>
+    <script id="input-fs" type="fragment-shader">
+    precision mediump float;
+    uniform vec3 u_color;
+    uniform vec2 u_mousePos;
+    uniform vec2 u_resolution;
+    uniform bool u_click;
+    void main(void)
+    {
+        vec2 pos = (gl_FragCoord.xy/u_resolution.xy);
+        vec2 mouse = (u_mousePos.xy/u_resolution.xy);
+        vec2 diff = vec2(mouse.x-pos.x,1.0-mouse.y-pos.y);
+        float col = 1.0-length(diff);
+        if(u_click)
+            col = clamp(pow(col, 10.0),0.1,1.0);
+        else
+            col = 0.1;
+        gl_FragColor = vec4(col,col,col,1);
+    }
+    </script>
+
+
+
+
+    <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
+    <script src="sketch.js" type="text/javascript"></script>
+</head>
+<body style="background: #000; margin:3px;">
+  <canvas id="glcanvas"></canvas>
+  </br><font color="red">x </font><font color="green">y </font><font color="blue">z</font>
+</body>
+</html>

@@ -278,6 +278,7 @@ canvas.height = _H;
 
 var gl = canvas.getContext('webgl');
 gl.enable(gl.DEPTH_TEST);
+gl.depthFunc(gl.LEQUAL);
 
 
 // Shader , Program , Buffer
@@ -315,6 +316,9 @@ var fs_line = createShader(gl,"SimpleUnlitShader-fs",gl.FRAGMENT_SHADER);
 var prg_line = createProgram(gl,vs_line,fs_line);
 var lineBuff = createBuffer(lineVertices);
 
+
+// frame buffer
+var frameBuffAndTex = createFrameBufferAndTexture(512,512);
 
 
 // model and texture
@@ -387,6 +391,9 @@ function loading()
 // Update
 function update()
 {
+
+
+
     // camera
     var eyePos = vec3.create();
     vec3.set(eyePos,2.5,2,3);
@@ -409,21 +416,33 @@ function update()
     //gl.uniform1f(gl.getUniformLocation(prg,"time"), dt / 1000 );
     //gl.uniform2f(gl.getUniformLocation(prg,"resolution"),_W,_H);
 
-    // clear all
-    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
     // light
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
     lightDir = [-0.4,-1,-0.6];
 
+    /*------------------------*/
+    // start frame buffer area
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffAndTex.frameBuffer);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-
-
-
-    // draw box
     box_old.draw(vp,lightDir);
     box_wall.draw(vp,lightDir);
+
+    
+    // end frame buffer area
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    /*------------------------*/
+
+
+    // clear all
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+    gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
+    // draw box
+    box_grass.texture = frameBuffAndTex.texture;
     box_grass.draw(vp,lightDir);
 
 
@@ -484,6 +503,30 @@ function createBuffer(vertices)
     gl.bindBuffer(gl.ARRAY_BUFFER,null);
 
     return buff;
+}
+
+function createFrameBufferAndTexture(w,h)
+{
+        var frameBuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        
+        return {
+            frameBuffer: frameBuffer,
+            texture: texture
+        };
 }
 
 function setAttribute(gl,prg,buffer,name,stride)
