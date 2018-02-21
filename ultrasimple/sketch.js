@@ -9,6 +9,7 @@ var audioContext = new AudioContext();
 var buffer = null;
 var source = audioContext.createBufferSource();
 
+/*
 var request = new XMLHttpRequest();
 request.open('GET', 'okl.mp3', true);
 request.responseType = 'arraybuffer';
@@ -24,9 +25,10 @@ request.onload = function () {
 
 source.connect(audioContext.destination);
 source.start(0);
-
+*/
 
 var sched = new WebAudioScheduler({ context: audioContext });
+sched.start(metronome);
 function startBgm()
 {
     sched.start(metronome);
