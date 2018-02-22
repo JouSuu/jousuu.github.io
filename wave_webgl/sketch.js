@@ -2,6 +2,7 @@
 
 window.onload = function()
 {
+
 // Define
 var _W = 450;
 var _H = 450;
@@ -28,9 +29,13 @@ var vertShader_input = createShader(gl,"input-vs",gl.VERTEX_SHADER);
 var fragShader_input = createShader(gl,"input-fs",gl.FRAGMENT_SHADER);
 var prg_input = createProgram(gl,vertShader_input,fragShader_input);
 
-var vertShader_test = createShader(gl,"simple-vs",gl.VERTEX_SHADER);
-var fragShader_test = createShader(gl,"simple-fs",gl.FRAGMENT_SHADER);
-var prg_test = createProgram(gl,vertShader_test,fragShader_test);
+var vertShader_main = createShader(gl,"simple-vs",gl.VERTEX_SHADER);
+var fragShader_main = createShader(gl,"simple-fs",gl.FRAGMENT_SHADER);
+var prg_main = createProgram(gl,vertShader_main,fragShader_main);
+
+var vertShader_wave = createShader(gl,"wave-vs",gl.VERTEX_SHADER);
+var fragShader_wave = createShader(gl,"wave-fs",gl.FRAGMENT_SHADER);
+var prg_wave = createProgram(gl,vertShader_wave,fragShader_wave);
 
 var vertices =
 [
@@ -45,36 +50,42 @@ var texCoord =
     0.0,1.0,
     0.0,0.0,
     1.0,1.0,
-    1.0,1.0,
+    1.0,0.0,
 ];
 
 var vertBuff = createBuffer(vertices);
 var texCoordBuff = createBuffer(texCoord);
-var frameBuffAndTex_wave_1 = createFrameBufferAndTexture(_W,_H);
-var frameBuffInput_1 = createFrameBufferAndTexture(_W,_H);
 
+var frameBuff_input = createFrameBufferAndTexture(_W,_H);
+var frameBuff_current = createFrameBufferAndTexture(_W,_H);
+var frameBuff_prev = createFrameBufferAndTexture(_W,_H);
+var frameBuff_prevprev = createFrameBufferAndTexture(_W,_H);
+
+var frameBuffs = [frameBuff_current,frameBuff_prev,frameBuff_prevprev];
+
+
+var cnt = 0;
 update();
-
-// 0,1,2 - 1,2,0 - 2,0,1
-for(var i=0;i<10;i++)
-{
-    var idxs = getNextIndexes(i);
-    //log("cur:",idxs.cur,", prev:",idxs.prev,", prevprev:",idxs.prevprev);
-}
 
 // Update
 function update()
 {
     var dt = Date.now() - _StartTime;
+    var idxs = getNextIndexes(cnt);
+    cnt++;
+    var currentBuff = frameBuffs[idxs.cur];
+    var prevBuff = frameBuffs[idxs.prev];
+    var prevPrevBuff = frameBuffs[idxs.prevprev];
 
-    
+
     /*------------------------*/
-    // draw input to texture
+    // draw input to input texture
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuff_input.frameBuffer);
     gl.useProgram(prg_input);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffInput_1.frameBuffer);
+    gl.viewport(0, 0, _W, _H);
     gl.clearColor(0.2,0.2,0.2,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    
+
     setAttribute(gl,prg_input,vertBuff,"v_pos",3);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_mousePos'), [mouseX,mouseY]);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_resolution'), [_W,_H]);
@@ -87,23 +98,63 @@ function update()
     /*------------------------*/
 
 
+
+
     /*------------------------*/
-    // texture to buff
-    gl.useProgram(prg_test);
+    // draw wave to current texture
+    gl.bindFramebuffer(gl.FRAMEBUFFER, currentBuff.frameBuffer);
+    gl.useProgram(prg_wave);
+    gl.viewport(0, 0, _W, _H);
     gl.clearColor(0.2,0.2,0.2,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    setAttribute(gl,prg_wave,vertBuff,"v_pos",3);
+    gl.uniform2fv(gl.getUniformLocation(prg_wave,'u_resolution'), [_W,_H]);
 
+    // from input texture
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, frameBuffInput_1.texture);
-    gl.uniform1i(gl.getUniformLocation(prg_test, 'texture'), 0);
-    setAttribute(gl,prg_test,vertBuff,"v_pos",3);
-    setAttribute(gl,prg_test,texCoordBuff,"a_texCoord",2);
+    gl.bindTexture(gl.TEXTURE_2D, frameBuff_input.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_input'), 0);
+    setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_input",2);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, prevPrevBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prev'), 1);
+    setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prev",2);
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, prevBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prevprev'), 2);
+    setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prevprev",2);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
+    gl.flush();
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    /*------------------------*/
+
+
+
+
+    /*------------------------*/
+    // main render part
+    gl.useProgram(prg_main);
+    gl.viewport(0, 0, _W, _H);
+    gl.clearColor(0.2,0.2,0.2,0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    setAttribute(gl,prg_main,vertBuff,"v_pos",3);
+
+    // from main texture
+    gl.activeTexture(gl.TEXTURE0);
+    // ↓ here is main render texture
+    gl.bindTexture(gl.TEXTURE_2D, currentBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_main, 'texture'), 0);
+    setAttribute(gl,prg_main,texCoordBuff,"a_texCoord",2);
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
     gl.bindTexture(gl.TEXTURE_2D, null);
     /*------------------------*/
-
 
     requestAnimationFrame(update);
 }
@@ -162,15 +213,17 @@ function createFrameBufferAndTexture(w,h)
         gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
 
         var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texture);
         
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         
+        // unbind
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         
