@@ -117,12 +117,12 @@ function update()
     setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_input",2);
 
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, prevPrevBuff.texture);
+    gl.bindTexture(gl.TEXTURE_2D, prevBuff.texture);
     gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prev'), 1);
     setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prev",2);
 
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, prevBuff.texture);
+    gl.bindTexture(gl.TEXTURE_2D, prevPrevBuff.texture);
     gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prevprev'), 2);
     setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prevprev",2);
 
