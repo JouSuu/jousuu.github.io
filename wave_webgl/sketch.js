@@ -21,19 +21,22 @@ var canvas = document.querySelector('#glcanvas');
 canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
-
+canvas.addEventListener('touchmove', function(event) {
+    mouseX =  = event.changedTouches[0].pageX;
+    mouseY =  = event.changedTouches[0].pageY;
+}, false);
 
 
 // sound visualization
 var appendCol = 0.0;
 var bgm_played = false;
 canvas.addEventListener('touchstart', function(event) {
+    updateEventname('touchmove');
     playBGM();
 }, false);
 
-canvas.addEventListener('touchmove', function(event) {
-    playBGM();
-}, false);
+
+
 function playBGM()
 {
     if(!bgm_played)
