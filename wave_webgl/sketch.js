@@ -4,8 +4,8 @@ window.onload = function()
 {
 
 // Define
-var _W = 450;
-var _H = 450;
+var _W = 518;
+var _H = 518;
 var _StartTime = Date.now();
 var abs = Math.abs;
 var sin = Math.sin;
@@ -19,6 +19,13 @@ var canvas = document.querySelector('#glcanvas');
 canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
+
+canvas.addEventListener('touchmove', function(e) {
+  event.preventDefault();
+  updateEventname('touchmove');
+  mouseX = e.changedTouches[0].pageX;
+  mouseY = e.changedTouches[0].pageY;
+}, false);
 
 canvas.width = _W;
 canvas.height = _H;
@@ -71,11 +78,7 @@ update();
 function update()
 {
     var dt = Date.now() - _StartTime;
-    var idxs = getNextIndexes(cnt);
-    cnt++;
-    var currentBuff = frameBuffs[idxs.cur];
-    var prevBuff = frameBuffs[idxs.prev];
-    var prevPrevBuff = frameBuffs[idxs.prevprev];
+
 
 
     /*------------------------*/
@@ -83,13 +86,14 @@ function update()
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuff_input.frameBuffer);
     gl.useProgram(prg_input);
     gl.viewport(0, 0, _W, _H);
-    gl.clearColor(0.2,0.2,0.2,0.0);
+    gl.clearColor(0.0,0.0,0.0,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     setAttribute(gl,prg_input,vertBuff,"v_pos",3);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_mousePos'), [mouseX,mouseY]);
     gl.uniform2fv(gl.getUniformLocation(prg_input,'u_resolution'), [_W,_H]);
     gl.uniform1i(gl.getUniformLocation(prg_input,"u_click"), mouseClick);
+    gl.uniform1f(gl.getUniformLocation(prg_input,"u_time"), dt);
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
@@ -99,16 +103,26 @@ function update()
 
 
 
+for(var i=0;i<4;i++)
+{
+    var idxs = getNextIndexes(cnt);
+    cnt++;
+    var currentBuff = frameBuffs[idxs.cur];
+    var prevBuff = frameBuffs[idxs.prev];
+    var prevPrevBuff = frameBuffs[idxs.prevprev];
+
 
     /*------------------------*/
     // draw wave to current texture
     gl.bindFramebuffer(gl.FRAMEBUFFER, currentBuff.frameBuffer);
     gl.useProgram(prg_wave);
     gl.viewport(0, 0, _W, _H);
-    gl.clearColor(0.2,0.2,0.2,0.0);
+    gl.clearColor(0.0,0.0,0.0,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     setAttribute(gl,prg_wave,vertBuff,"v_pos",3);
     gl.uniform2fv(gl.getUniformLocation(prg_wave,'u_resolution'), [_W,_H]);
+    gl.uniform2fv(gl.getUniformLocation(prg_wave,'mouse'), [mouseX,mouseY]);
+    gl.uniform1f(gl.getUniformLocation(prg_wave,"u_time"), dt);
 
     // from input texture
     gl.activeTexture(gl.TEXTURE0);
@@ -129,18 +143,19 @@ function update()
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
     gl.bindTexture(gl.TEXTURE_2D, null);
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     /*------------------------*/
 
 
 
 
+}
+
     /*------------------------*/
     // main render part
     gl.useProgram(prg_main);
     gl.viewport(0, 0, _W, _H);
-    gl.clearColor(0.2,0.2,0.2,0.0);
+    gl.clearColor(0.0,0.0,0.0,0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     setAttribute(gl,prg_main,vertBuff,"v_pos",3);
 
@@ -155,6 +170,7 @@ function update()
     gl.flush();
     gl.bindTexture(gl.TEXTURE_2D, null);
     /*------------------------*/
+
 
     requestAnimationFrame(update);
 }
