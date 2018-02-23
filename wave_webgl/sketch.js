@@ -31,6 +31,7 @@ canvas.addEventListener('touchmove', function(event) {
 var appendCol = 0.0;
 var bgm_played = false;
 canvas.addEventListener('touchstart', function(event) {
+    event.preventDefault(); // ignore move
     updateEventname('touchmove');
     playBGM();
 }, false);
