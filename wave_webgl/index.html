@@ -82,9 +82,10 @@
     precision mediump float;
     uniform sampler2D texture;
     varying vec2 v_texCoord;
+    uniform float u_append;
     void main(void)
     {
-        gl_FragColor = texture2D(texture, v_texCoord);
+        gl_FragColor = texture2D(texture, v_texCoord) + vec4(0,u_append*0.3,0,0);
     }
     </script>
 
@@ -135,6 +136,7 @@
 
 
 
+    <audio id="bgm" src="okl.mp3"></audio>
     <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
     <script src="sketch.js" type="text/javascript"></script>
 </head>

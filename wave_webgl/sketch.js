@@ -14,6 +14,8 @@ var log = console.log;
 var mouseX=0,mouseY=0;
 var mouseClick = 0;
 
+
+
 // Init
 var canvas = document.querySelector('#glcanvas');
 canvas.addEventListener('mousemove', onMouseMove, false);
@@ -21,6 +23,29 @@ canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 
 
+
+// sound visualization
+var appendCol = 0.0;
+var bgm_played = false;
+canvas.addEventListener('touchstart', function(event) {
+    playBGM();
+}, false);
+
+canvas.addEventListener('touchmove', function(event) {
+    playBGM();
+}, false);
+function playBGM()
+{
+    if(!bgm_played)
+    {
+        bgm_played = true;
+        var audio = document.getElementById('bgm');
+        audio.play();
+        setInterval(function(){
+            appendCol = 1.0;
+          }, 60 / 92.0 * 1000);
+    }
+}
 
 
 canvas.width = _W;
@@ -67,6 +92,9 @@ var frameBuff_prevprev = createFrameBufferAndTexture(_W,_H);
 var frameBuffs = [frameBuff_current,frameBuff_prev,frameBuff_prevprev];
 
 
+
+
+
 var cnt = 0;
 update();
 
@@ -74,8 +102,7 @@ update();
 function update()
 {
     var dt = Date.now() - _StartTime;
-
-
+    appendCol -= 0.03;
 
     /*------------------------*/
     // draw input to input texture
@@ -161,6 +188,8 @@ for(var i=0;i<4;i++)
     gl.bindTexture(gl.TEXTURE_2D, currentBuff.texture);
     gl.uniform1i(gl.getUniformLocation(prg_main, 'texture'), 0);
     setAttribute(gl,prg_main,texCoordBuff,"a_texCoord",2);
+    gl.uniform1f(gl.getUniformLocation(prg_main,"u_append"), appendCol);
+
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
@@ -272,6 +301,7 @@ function onMouseMove(e)
 }
 function onMouseDown(e) 
 {
+    playBGM();
     mouseClick = 1;
 }
 function onMouseUp() 
