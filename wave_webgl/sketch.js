@@ -20,10 +20,31 @@ canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 
-canvas.addEventListener('touchmove', function(e) {
-  mouseX = e.changedTouches[0].pageX;
-  mouseY = e.changedTouches[0].pageY;
+
+// touch
+canvas.addEventListener('touchstart', function(event) 
+{
+  updateXY(event);
+    mouseX = event.changedTouches[0].pageX;
+    mouseY = event.changedTouches[0].pageY;
 }, false);
+
+canvas.addEventListener('touchmove', function(event) 
+{
+    event.preventDefault(); // ignore scroll
+    mouseX = event.changedTouches[0].pageX;
+    mouseY = event.changedTouches[0].pageY;
+}, false);
+
+canvas.addEventListener('touchend', function(event) 
+{
+    mouseX = event.changedTouches[0].pageX;
+    mouseY = event.changedTouches[0].pageY;
+}, false);
+
+
+
+
 
 canvas.width = _W;
 canvas.height = _H;
