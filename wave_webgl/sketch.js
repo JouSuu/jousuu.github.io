@@ -21,8 +21,6 @@ canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 
 canvas.addEventListener('touchmove', function(e) {
-  event.preventDefault();
-  updateEventname('touchmove');
   mouseX = e.changedTouches[0].pageX;
   mouseY = e.changedTouches[0].pageY;
 }, false);
