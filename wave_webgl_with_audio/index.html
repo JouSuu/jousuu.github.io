@@ -11,54 +11,32 @@
     attribute vec3 v_pos;
     attribute vec2 a_texCoord_input;
     varying vec2 v_texCoord_input;
+    attribute vec2 a_texCoord_prev;
+    varying vec2 v_texCoord_prev;
+    attribute vec2 a_texCoord_prevprev;
+    varying vec2 v_texCoord_prevprev;
     void main(void)
     {
         gl_Position = vec4(v_pos,1.0);
         v_texCoord_input = a_texCoord_input;
+        v_texCoord_prev = a_texCoord_prev;
+        v_texCoord_prevprev = a_texCoord_prevprev;
     }
     </script>
 
     <script id="wave-fs" type="fragment-shader">
     precision mediump float;
+    //precision highp float;
+    //precision lowp float;
     uniform sampler2D texture_input;
-    uniform sampler2D texture_back;
+    uniform sampler2D texture_prev;
+    uniform sampler2D texture_prevprev;
     varying vec2 v_texCoord_input;
+    varying vec2 v_texCoord_prev;
+    varying vec2 v_texCoord_prevprev;
     uniform vec2 u_resolution;
+    uniform float u_time;
 
-    float back(int x, int y)
-    {
-        return texture2D(texture_back,(mod(gl_FragCoord.xy+vec2(x,y), u_resolution))/u_resolution).r* 2.0 - 1.0;
-    }
-
-    float backback(int x, int y)
-    {
-        return texture2D(texture_back,(mod(gl_FragCoord.xy+vec2(x,y), u_resolution))/u_resolution).a* 2.0 - 1.0;
-    }
-
-    void main(void)
-    {
-        // wave equation
-        float attenuation = 0.997;
-        float c = 0.4;
-        float h_next = 
-            c * 
-            ( 
-                back(1,0) + back(-1,0) + back(0,1) + back(0,-1)
-                -4.0 * back(0,0)
-            ) 
-            - backback(0,0) 
-            + 2.0 * back(0,0);
-
-        h_next *= attenuation;
-        h_next += texture2D(texture_input,v_texCoord_input).r;
-        
-        float col = (h_next + 1.0)/2.0;
-        gl_FragColor = vec4(col,col,col, (back(0,0) + 1.0)/2.0);
-
-    }
-
-
-/*
 
     vec4 prevTex(vec2 offset)
     {
@@ -69,14 +47,6 @@
     {
         vec4 c = prevTex(vec2(ox,oy));
         return (ot==1?c.b:c.a) * 2.0 - 1.0;
-    }
-    float prevTex()
-    {
-
-    }
-    float prevprevTex()
-    {
-
     }
     void main(void)
     {
@@ -91,7 +61,6 @@
         gl_FragColor = vec4(col,col,col, (lev(0,0,1)+1.0)/2.0);
 
     }
-*/
     </script>
 
 
@@ -113,9 +82,10 @@
     precision mediump float;
     uniform sampler2D texture;
     varying vec2 v_texCoord;
+    uniform float u_append;
     void main(void)
     {
-        gl_FragColor = texture2D(texture, v_texCoord) + vec4(0,0,0,0);
+        gl_FragColor = texture2D(texture, v_texCoord) + vec4(0,u_append*0.3,0,0);
     }
     </script>
 
@@ -145,12 +115,9 @@
         float col = 0.0;
  
         // mouse input
-        if(u_click)
-        {
-            vec2 diff = vec2(mouse.x-pos.x,1.0-mouse.y-pos.y);
-            col = 1.0-length(diff);
-            col = clamp(pow(col, 132.0),0.0,1.0) * 1.5;
-        }
+        vec2 diff = vec2(mouse.x-pos.x,1.0-mouse.y-pos.y);
+        col = 1.0-length(diff);
+        col = clamp(pow(col, 132.0),0.0,1.0) * 1.5;
 
         // auto input
         if(mod(u_time,32.0) == 0.0)

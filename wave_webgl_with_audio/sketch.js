@@ -27,6 +27,13 @@ canvas.addEventListener('touchmove', function(event) {
 }, false);
 
 
+// sound visualization
+var appendCol = 0.0;
+var bgm_played = false;
+canvas.addEventListener('touchstart', function(event) {
+    event.preventDefault(); // ignore move
+    playBGM();
+}, false);
 
 
 
@@ -82,8 +89,10 @@ var texCoordBuff = createBuffer(texCoord);
 
 var frameBuff_input = createFrameBufferAndTexture(_W,_H);
 var frameBuff_current = createFrameBufferAndTexture(_W,_H);
-var frameBuff_back = createFrameBufferAndTexture(_W,_H);
-var frameBuffs = [frameBuff_current,frameBuff_back];
+var frameBuff_prev = createFrameBufferAndTexture(_W,_H);
+var frameBuff_prevprev = createFrameBufferAndTexture(_W,_H);
+
+var frameBuffs = [frameBuff_current,frameBuff_prev,frameBuff_prevprev];
 
 
 
@@ -96,6 +105,7 @@ update();
 function update()
 {
     var dt = Date.now() - _StartTime;
+    appendCol -= 0.03;
 
     /*------------------------*/
     // draw input to input texture
@@ -123,8 +133,9 @@ for(var i=0;i<4;i++)
 {
     var idxs = getNextIndexes(cnt);
     cnt++;
-    var currentBuff = frameBuffs[idxs.current];
-    var backBuff = frameBuffs[idxs.back];
+    var currentBuff = frameBuffs[idxs.cur];
+    var prevBuff = frameBuffs[idxs.prev];
+    var prevPrevBuff = frameBuffs[idxs.prevprev];
 
 
     /*------------------------*/
@@ -146,14 +157,22 @@ for(var i=0;i<4;i++)
     setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_input",2);
 
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, backBuff.texture);
-    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_back'), 1);
+    gl.bindTexture(gl.TEXTURE_2D, prevBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prev'), 1);
+    setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prev",2);
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, prevPrevBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave, 'texture_prevprev'), 2);
+    setAttribute(gl,prg_wave,texCoordBuff,"a_texCoord_prevprev",2);
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     /*------------------------*/
+
+
 
 
 }
@@ -172,6 +191,8 @@ for(var i=0;i<4;i++)
     gl.bindTexture(gl.TEXTURE_2D, currentBuff.texture);
     gl.uniform1i(gl.getUniformLocation(prg_main, 'texture'), 0);
     setAttribute(gl,prg_main,texCoordBuff,"a_texCoord",2);
+    gl.uniform1f(gl.getUniformLocation(prg_main,"u_append"), appendCol);
+
 
     gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
     gl.flush();
@@ -266,11 +287,14 @@ function setAttribute(gl,prg,buffer,name,stride)
 
 function getNextIndexes(i)
 {
-    //0,1
-    //1,0
-    var current = i%2;
-    var back = (i+1)%2;
-    return{current:current,back:back};
+    //loop
+    //0,1,2
+    //1,2,0
+    //2,0,1
+    var cur = i%3;
+    var prev = (i+1)%3;
+    var prevprev = (i+2)%3;
+    return{cur:cur,prev:prev,prevprev:prevprev};
 }
 
 function onMouseMove(e) 
@@ -280,6 +304,7 @@ function onMouseMove(e)
 }
 function onMouseDown(e) 
 {
+    playBGM();
     mouseClick = 1;
 }
 function onMouseUp() 
