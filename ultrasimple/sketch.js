@@ -46,6 +46,7 @@ class GameObject
 
   setUpTexture(image,texCoord)
   {
+    /*
     this.textureCoordBuff = createBuffer(texCoord);
 
     // create texture
@@ -60,6 +61,7 @@ class GameObject
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     this.textureAttatched = true;
+    */
   }
 
 
@@ -303,7 +305,7 @@ var fragShader = createShader(gl,"shader-fs",gl.FRAGMENT_SHADER);
 var prg = createProgram(gl,vertShader,fragShader);
 var buff = createBuffer(vertices);
 var normal_buff = createBuffer(normals);
-
+var box = new GameObject(prg,buff,vertices.length,normal_buff);
 
 // Lines
 var lineVertices = 
@@ -495,6 +497,7 @@ var frameBuffs = [frameBuff_current,frameBuff_back];
 loading();
 
 
+var box;
 
 var callBackId;
 function loading()
@@ -522,6 +525,7 @@ function loading()
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+        box.setUpTexture(image);
 
 
         cancelAnimationFrame(callBackId);
@@ -565,15 +569,21 @@ function update()
 
     // light
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
-    lightDir = [-0.4,-1,-0.6];
+    //lightDir = [-0.4,-1,-0.6];
+    lightDir = [-0.4,-1,0.6];
+    lightDir[2]+=sin(dt*0.003)*0.5;
+    lightDir[0]+=cos(dt*0.001)*0.2;
 
 
     // clear all
     gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+
+
+
 /*
-    box_old.draw(vp,lightDir);
+    
     box_wall.draw(vp,lightDir);
     gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
     // draw box
@@ -643,7 +653,8 @@ function update()
     /*------------------------*/
 
 
-
+    box.pos = [-4,0.5,2];
+    box.draw(vp,lightDir);
 
     // Plane
     gl.useProgram(prg_plane);
@@ -663,13 +674,11 @@ function update()
     gl.bindTexture(gl.TEXTURE_2D, currentBuff.texture);
     gl.uniform1i(gl.getUniformLocation(prg_plane, 'texture'), 0);
     setAttribute(gl,prg_plane,planeTexCoordBuff,"a_texCoord",2);
+    gl.uniform3fv(gl.getUniformLocation(prg_plane,'v_dirLight'), lightDir);
 
     gl.uniform3f(gl.getUniformLocation(prg_plane,"u_color"),0,1,0);
     setAttribute(gl,prg_plane,buff_plane,"v_pos",3);
     gl.drawElements(gl.TRIANGLES, indexes_plane.length, gl.UNSIGNED_SHORT, 0);
-
-
-
 
 
 

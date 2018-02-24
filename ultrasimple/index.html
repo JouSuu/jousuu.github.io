@@ -17,7 +17,7 @@
     {
         gl_Position = u_wvp * vec4(v_pos,1.0);
         v_normal = a_normal;
-        v_texCoord = a_texCoord;
+        //v_texCoord = a_texCoord;
     }
     </script>
     <script id="shader-fs" type="fragment-shader">
@@ -40,9 +40,9 @@
         //vec3 textureCol = vec3(texture2D(texture, v_texCoord));
         //gl_FragColor = vec4(u_color*0.1 + textureCol*0.8 + vec3(col)*0.7,1)*0.8;
 
-        if(u_ifTexReadyThisIsOne == 1.0)
-            gl_FragColor = texture2D(texture, v_texCoord);
-        else
+        //if(u_ifTexReadyThisIsOne == 1.0)
+        //    gl_FragColor = texture2D(texture, v_texCoord);
+        //else
             gl_FragColor = vec4(col,col,col,1);
         //gl_FragColor = vec4(gl_FragCoord.x/resolution.x,gl_FragCoord.y,0,1);
     }
@@ -197,11 +197,14 @@
     attribute vec2 a_texCoord;
     varying vec2 v_texCoord;
     uniform sampler2D texture;
-    uniform float u_stride;
+    float tex(vec2 pos)
+    {
+        return texture2D(texture, pos).b;
+    }
     void main(void)
     {
         //float h = texture2D(texture, v_texCoord).b;
-        gl_Position = u_wvp * vec4(v_pos,1.0) + vec4(0.0,texture2D(texture, v_pos.xy).b*0.3,0.0,0.0);
+        gl_Position = u_wvp * vec4(v_pos,1.0) + vec4(0.0,tex(v_pos.xy)*0.35,0.0,0.0);
         v_texCoord = a_texCoord;
     }
     </script>
@@ -211,9 +214,10 @@
     uniform vec3 u_color;
     varying vec2 v_texCoord;
     uniform sampler2D texture;
+    uniform vec3 v_dirLight;
+
     void main(void)
     {
-        gl_FragColor = vec4(u_color,1);
         gl_FragColor = texture2D(texture, v_texCoord);
     }
     </script>
