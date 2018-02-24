@@ -18,6 +18,10 @@ var mouseClick = 0;
 
 // Init
 var canvas = document.querySelector('#glcanvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+
 canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
@@ -47,8 +51,8 @@ function playBGM()
 }
 
 
-canvas.width = _W;
-canvas.height = _H;
+//canvas.width = window.width;
+//canvas.height = _H;
 var gl = canvas.getContext('webgl');
 
 // Shader , Program , Buffer
@@ -157,6 +161,7 @@ for(var i=0;i<1;i++)
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     /*------------------------*/
+
 
 }
 

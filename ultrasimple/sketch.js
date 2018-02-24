@@ -20,6 +20,10 @@ var _mouseMoveOffs = mat4.create(); // matrix for mousemove camera
 var _wheelScrollOffs = 1; // float for mousemove wheel camera
 var _wheelMoveOffs = [0,0]; // vec2 for wheelmove camera
 var BG_COLOR = [0.61,0.45,0.15];
+var cnt = 0;
+var mouseX=0,mouseY=0;
+var mouseClick = 0;
+
 
 // Class
 class GameObject
@@ -371,9 +375,6 @@ image_wall.onload = function()
 
 
 
-
-
-
 /*--------------------------------*/
 // plane start
 /*--------------------------------*/
@@ -476,22 +477,6 @@ function update()
     var lightDir = [cos(dt*0.0015)*1.7,sin(dt*0.0015)*1.7,sin(dt*0.0015)*0.7];
     lightDir = [-0.4,-1,-0.6];
 
-    /*------------------------*/
-    // start frame buffer area
-    /*
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffAndTex.frameBuffer);
-    gl.clearDepth(1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    box_old.draw(vp,lightDir);
-    box_wall.draw(vp,lightDir);
-
-    
-    // end frame buffer area
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    */
-    /*------------------------*/
-
 
     // clear all
     gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
@@ -512,9 +497,6 @@ function update()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff_plane);
     var world_plane = mat4.create();
     var wvp_plane = mat4.create();
-
-    //mat4.scale(world_plane,world_plane,[scale,scale,scale]);
-    //mat4.translate(world_line_x,world_line_x,pos);
 
     mat4.multiply(world_plane,vp,world_plane);
     var u_wvp_plane = gl.getUniformLocation(prg_plane, 'u_wvp');
@@ -608,10 +590,6 @@ function createFrameBufferAndTexture(w,h)
         gl.bindTexture(gl.TEXTURE_2D, texture);
         
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         
         gl.bindTexture(gl.TEXTURE_2D, null);

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html  lang="en-US">
+<head> 
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="height=device-height,width=device-width" />
+    <meta name="viewport" content="initial-scale=1.0" />
+    <meta name="HandheldFriendly" content="true"/>
+    <title>ultrasimple - JouSuu</title>
+
+    <script id="wave-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    attribute vec2 a_texCoord_input;
+    varying vec2 v_texCoord_input;
+    void main(void)
+    {
+        gl_Position = vec4(v_pos,1.0);
+        v_texCoord_input = a_texCoord_input;
+    }
+    </script>
+
+    <script id="wave-fs" type="fragment-shader">
+    precision mediump float;
+    uniform sampler2D texture_input;
+    uniform sampler2D texture_back;
+    varying vec2 v_texCoord_input;
+    uniform vec2 u_resolution;
+
+    float back(int x, int y)
+    {
+        return texture2D(texture_back,(mod(gl_FragCoord.xy+vec2(x,y), u_resolution))/u_resolution).b* 2.0 - 1.0;
+    }
+
+    float backback(int x, int y)
+    {
+        return texture2D(texture_back,(mod(gl_FragCoord.xy+vec2(x,y), u_resolution))/u_resolution).a* 2.0 - 1.0;
+    }
+
+    void main(void)
+    {
+        // wave equation
+        float attenuation = 0.995;
+        float c = 0.40;
+        float h_next = 
+            c * 
+            ( 
+                back(1,0) + back(-1,0) + back(0,1) + back(0,-1)
+                -4.0 * back(0,0)
+            ) 
+            - backback(0,0) 
+            + 2.0 * back(0,0);
+
+        h_next *= attenuation;
+        h_next += texture2D(texture_input,v_texCoord_input).r;
+        
+        float col = (h_next + 1.0)/2.0;
+        gl_FragColor = vec4(col*0.3,col*0.3,col, (back(0,0) + 1.0)/2.0);
+
+    }
+
+    </script>
+
+
+
+
+
+    <script id="simple-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
+    void main(void)
+    {
+        gl_Position = vec4(v_pos,1.0);
+        v_texCoord = a_texCoord;
+    }
+    </script>
+
+    <script id="simple-fs" type="fragment-shader">
+    precision mediump float;
+    uniform sampler2D texture;
+    varying vec2 v_texCoord;
+    void main(void)
+    {
+        gl_FragColor = texture2D(texture, v_texCoord) + vec4(0,0,0,0);
+    }
+    </script>
+
+
+
+
+
+    <script id="input-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    void main(void)
+    {
+        gl_Position = vec4(v_pos,1.0);
+    }
+    </script>
+    <script id="input-fs" type="fragment-shader">
+    precision mediump float;
+    uniform vec3 u_color;
+    uniform vec2 u_mousePos;
+    uniform vec2 u_resolution;
+    uniform bool u_click;
+    uniform float u_time;
+    void main(void)
+    {
+        vec2 pos = (gl_FragCoord.xy/u_resolution.xy);
+        vec2 mouse = (u_mousePos.xy/u_resolution.xy);
+
+        float col = 0.0;
+ 
+        // mouse input
+        //if(u_click)
+        {
+            vec2 diff = vec2(mouse.x-pos.x,1.0-mouse.y-pos.y);
+            col = 1.0-length(diff);
+            col = clamp(pow(col, 132.0),0.0,1.0) * 1.5;
+        }
+
+        // auto input
+        if(mod(u_time,36.0) == 0.0)
+        {
+            float x = abs(cos(u_time * 0.02 + 2.0));
+            float y = abs(sin(u_time * 0.002 + 2.0));
+            vec2 diff = vec2(x-pos.x,y-pos.y);
+            col = 1.0-length(diff);
+            col = clamp(pow(col, 132.0),0.0,1.0) * 1.5;
+        }
+
+/*
+        float x = cos(u_time * 0.0016 + 3.0)/2.0 + 0.5;
+        float y = sin(u_time * 0.0004 + 3.0)/2.0 + 0.5;
+        vec2 diff = vec2(x-pos.x,y-pos.y);
+        col = 1.0-length(diff);
+        col = clamp(pow(col, 232.0),0.0,1.0) * 1.5;
+*/
+        gl_FragColor = vec4(col,col,col,1);
+    }
+    </script>
+
+
+
+    <script src="../thirdlib/gl-matrix.js" type="text/javascript"></script>
+    <script src="sketch.js" type="text/javascript"></script>
+    <style>
+body {
+       background-color: #000;
+       margin-left: 0px;
+       margin-top: 0px;
+       margin-right: 0px;
+       margin-bottom: 0px;
+       overflow-x: hidden;
+       overflow-y: hidden;
+}
+</style>
+</head>
+
+
+<body><canvas id="glcanvas"></canvas></body>
+</html>
