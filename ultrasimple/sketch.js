@@ -3,84 +3,6 @@
 window.onload = function()
 {
 
-// sound
-var _beat = 0;
-
-
-/*
-var request = new XMLHttpRequest();
-request.open('GET', 'okl.mp3', true);
-request.responseType = 'arraybuffer';
-request.send();
-
-request.onload = function () {
-    var res = request.response;
-    audioContext.decodeAudioData(res, function (buf) {
-        source.buffer = buf;
-    });
-    setTimeout(startBgm, 900);
-};
-
-source.connect(audioContext.destination);
-source.start(0);
-*/
-
-var sched;
-function audioStt()
-{
-    console.log("tou");
-    var audioContext = new AudioContext();
-    var buffer = null;
-    var source = audioContext.createBufferSource();
-    sched = new WebAudioScheduler({ context: audioContext });
-    sched.start(metronome);
-    var request = new XMLHttpRequest();
-request.open('GET', 'okl.mp3', true);
-request.responseType = 'arraybuffer';
-request.send();
-
-request.onload = function () {
-    var res = request.response;
-    audioContext.decodeAudioData(res, function (buf) {
-        source.buffer = buf;
-    });
-    setTimeout(startBgm, 900);
-};
-
-source.connect(audioContext.destination);
-source.start(0);
-}
-
-function startBgm()
-{
-    sched.start(metronome);
-}
-
-function metronome(e) 
-{
-    var t0 = e.playbackTime;
-
-    sched.insert(t0 + 60/92 * 0, ticktack);
-    sched.insert(t0 + 60/92 * 1, ticktack, { frequency: 140, duration: 0.2 });
-    sched.insert(t0 + 60/92 * 2, ticktack, { frequency: 240, duration: 0.2 });
-    sched.insert(t0 + 60/92 * 3, ticktack, { frequency: 340, duration: 0.2 });
-    sched.insert(t0 + 60/92 * 4, metronome);
-}
-
-function ticktack(e) {
-    _beat = 0.2;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 // Define
 var _W = 450;
@@ -137,7 +59,7 @@ class GameObject
   }
 
 
-  draw(vp,dirLightDirection,beat)
+  draw(vp,dirLightDirection)
   {
     // set attribute
     gl.useProgram(this.prg);
@@ -159,7 +81,6 @@ class GameObject
     gl.uniform3fv(gl.getUniformLocation(this.prg,'v_dirLight'), dirLightDirection);
     gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),this.color[0],this.color[1],this.color[2]);
     gl.uniform1f(gl.getUniformLocation(this.prg,"u_ambientLight"), this.ambientLightIntensity);
-    gl.uniform1f(gl.getUniformLocation(this.prg,"u_beat"), beat);
 
     
     
@@ -349,11 +270,10 @@ var texCoord =
 
 // Init
 var canvas = document.querySelector('#glcanvas');
-canvas.addEventListener('mousedown', audioStt, false);
+canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 canvas.addEventListener('mousemove', onMouseMove, false);
 canvas.addEventListener('mousewheel', onMouseWheel, false);
-canvas.addEventListener('touchstart', audioStt, false);
 
 canvas.width = _W;
 canvas.height = _H;
@@ -444,6 +364,59 @@ image_wall.onload = function()
     imgReady[2] = true;
 }
 
+
+
+
+
+
+
+
+
+
+
+/*--------------------------------*/
+// plane start
+/*--------------------------------*/
+
+var vertices_plane = 
+[
+    0,0,0,
+    1,0,0,
+    2,0,0,
+
+    0,-1,0,
+    1,-1,0,
+    2,-1,0,
+
+    0,-2,0,
+    1,-2,0,
+    2,-2,0,
+];
+
+var indexes_plane =
+[
+    0,3,4,
+    0,4,1,
+    1,4,5,
+    1,5,2,
+    3,6,7,
+    3,7,4,
+    4,7,8,
+    4,8,5,
+];
+
+var vs_plane = createShader(gl,"PlaneShader-vs",gl.VERTEX_SHADER);
+var fs_plane = createShader(gl,"PlaneShader-fs",gl.FRAGMENT_SHADER);
+var prg_plane = createProgram(gl,vs_plane,fs_plane);
+var buff_plane = createBuffer(vertices_plane);
+var indexBuff_plane = createIndexBuffer(indexes_plane);
+/*--------------------------------*/
+// plane end
+/*--------------------------------*/
+
+
+
+
 loading();
 
 
@@ -495,7 +468,6 @@ function update()
     // time and resolution to shader
     var dt = Date.now() - _StartTime;
 
-    _beat -= 0.006;
 
     //gl.uniform1f(gl.getUniformLocation(prg,"time"), dt / 1000 );
     //gl.uniform2f(gl.getUniformLocation(prg,"resolution"),_W,_H);
@@ -522,15 +494,40 @@ function update()
 
 
     // clear all
-    gl.clearColor(BG_COLOR[0]+_beat,BG_COLOR[1],BG_COLOR[2]+_beat,0.0);
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    box_old.draw(vp,lightDir,_beat);
-    box_wall.draw(vp,lightDir,_beat);
-    //gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
+    box_old.draw(vp,lightDir);
+    box_wall.draw(vp,lightDir);
+    gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
     // draw box
     //box_grass.texture = frameBuffAndTex.texture;
-    box_grass.draw(vp,lightDir,_beat);
+    box_grass.draw(vp,lightDir);
+
+
+
+
+    // Plane
+    gl.useProgram(prg_plane);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff_plane);
+    var world_plane = mat4.create();
+    var wvp_plane = mat4.create();
+
+    //mat4.scale(world_plane,world_plane,[scale,scale,scale]);
+    //mat4.translate(world_line_x,world_line_x,pos);
+
+    mat4.multiply(world_plane,vp,world_plane);
+    var u_wvp_plane = gl.getUniformLocation(prg_plane, 'u_wvp');
+    gl.uniformMatrix4fv(u_wvp_plane,false,world_plane);
+
+    gl.uniform3f(gl.getUniformLocation(prg_plane,"u_color"),0,1,0);
+    setAttribute(gl,prg_plane,buff_plane,"v_pos",3);
+    gl.drawElements(gl.TRIANGLES, indexes_plane.length, gl.UNSIGNED_SHORT, 0);
+
+
+
+
+
 
 
     // Draw axis
@@ -588,6 +585,16 @@ function createBuffer(vertices)
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);
     // unbind vertex buffer
     gl.bindBuffer(gl.ARRAY_BUFFER,null);
+
+    return buff;
+}
+
+function createIndexBuffer(indexes)
+{
+    var buff = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,buff);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Int16Array(indexes),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,null);
 
     return buff;
 }

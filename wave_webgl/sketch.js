@@ -4,8 +4,8 @@ window.onload = function()
 {
 
 // Define
-var _W = 518;
-var _H = 518;
+var _W = 512;
+var _H = 512;
 var _StartTime = Date.now();
 var abs = Math.abs;
 var sin = Math.sin;
@@ -24,6 +24,9 @@ canvas.addEventListener('mouseup', onMouseUp, false);
 canvas.addEventListener('touchmove', function(event) {
     mouseX = event.changedTouches[0].pageX;
     mouseY = event.changedTouches[0].pageY;
+}, false);
+canvas.addEventListener('touchstart', function(event) {
+    event.preventDefault(); // ignore move
 }, false);
 
 
@@ -119,7 +122,7 @@ function update()
 
 
 
-for(var i=0;i<4;i++)
+for(var i=0;i<1;i++)
 {
     var idxs = getNextIndexes(cnt);
     cnt++;
