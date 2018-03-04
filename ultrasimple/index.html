@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html  lang="en-US">
-<head> 
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="height=device-height,width=device-width" />
     <meta name="viewport" content="initial-scale=1.0" />
@@ -82,9 +82,6 @@
     }
     </script>
 
-
-
-
     <script id="wave-fs" type="fragment-shader">
     precision mediump float;
     uniform sampler2D texture_input;
@@ -107,24 +104,72 @@
         // wave equation
         float attenuation = 0.995;
         float c = 0.40;
-        float h_next = 
-            c * 
-            ( 
+        float h_next =
+            c *
+            (
                 back(1,0) + back(-1,0) + back(0,1) + back(0,-1)
                 -4.0 * back(0,0)
-            ) 
-            - backback(0,0) 
+            )
+            - backback(0,0)
             + 2.0 * back(0,0);
 
         h_next *= attenuation;
         h_next += texture2D(texture_input,v_texCoord_input).r;
-        
+
         float col = (h_next + 1.0)/2.0;
         gl_FragColor = vec4(col*0.3,col*0.3,col, (back(0,0) + 1.0)/2.0);
 
     }
 
     </script>
+
+
+
+
+
+
+
+
+
+    <script id="wave_vel-vs" type="vertex-shader">
+    attribute vec3 v_pos;
+    attribute vec2 a_texCoord;
+    varying vec2 v_texCoord;
+    void main(void)
+    {
+        gl_Position = vec4(v_pos,1.0);
+        v_texCoord = a_texCoord;
+    }
+    </script>
+
+    <script id="wave_vel-fs" type="fragment-shader">
+    precision mediump float;
+    uniform sampler2D texture;
+    varying vec2 v_texCoord;
+    uniform vec2 u_resolution;
+
+    float sample(int x, int y)
+    {
+        return texture2D(texture,(mod(gl_FragCoord.xy+vec2(x,y), u_resolution))/u_resolution).b* 2.0 - 1.0;
+    }
+
+    void main(void)
+    {
+        float vx = 0.5 + ( (sample(1,0) - sample(0,0)) + (sample(0,0) - sample(-1,0)) ) * 0.5;
+        float vy = 0.5 + ( (sample(0,1) - sample(0,0)) + (sample(0,0) - sample(0,-1)) ) * 0.5;
+
+        //gl_FragColor = vec4(abs(vx),vy,texture2D(texture, v_texCoord).b,1);
+
+        gl_FragColor = vec4(vx,vy,0,1);
+
+    }
+
+    </script>
+
+
+
+
+
 
 
 
@@ -149,7 +194,7 @@
         vec2 mouse = (u_mousePos.xy/u_resolution.xy);
 
         float col = 0.0;
- 
+
         // mouse input
         //if(u_click)
         {
@@ -159,6 +204,7 @@
         }
 
         // auto input
+        /*
         if(mod(u_time,36.0) == 0.0)
         {
             float x = abs(cos(u_time * 0.02 + 2.0));
@@ -167,6 +213,7 @@
             col = 1.0-length(diff);
             col = clamp(pow(col, 132.0),0.0,1.0) * 1.5;
         }
+        */
 
 /*
         float x = cos(u_time * 0.0016 + 3.0)/2.0 + 0.5;

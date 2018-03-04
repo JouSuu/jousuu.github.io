@@ -24,6 +24,10 @@ var cnt = 0;
 var mouseX=0,mouseY=0;
 var mouseClick = 0;
 
+var myPos = [0.5,0.5];
+var myAcc = [0,0];
+var myVel = [0,0];
+
 
 // Class
 class GameObject
@@ -38,7 +42,7 @@ class GameObject
     this.pos = [0,0,0];
     this.color = [1,1,1];
     this.ambientLightIntensity = 0.5;
-    this.rot = [0,1,0];
+    this.rot = [0,0,0];
     this.texture;
     this.textureCoordBuff;
     this.textureAttatched = false;
@@ -77,7 +81,7 @@ class GameObject
     var wvp_rect = mat4.create();
     var rectPos = [0,0,0];
     mat4.translate(world_rect,world_rect,this.pos);
-    mat4.rotate(world_rect,world_rect,0,this.rot)
+    mat4.rotate(world_rect,world_rect,10,this.rot)
     mat4.scale(world_rect,world_rect,[this.scale,this.scale,this.scale]);
     mat4.multiply(wvp_rect,vp,world_rect);
 
@@ -88,8 +92,8 @@ class GameObject
     gl.uniform3f(gl.getUniformLocation(this.prg,"u_color"),this.color[0],this.color[1],this.color[2]);
     gl.uniform1f(gl.getUniformLocation(this.prg,"u_ambientLight"), this.ambientLightIntensity);
 
-    
-    
+
+
     if(this.textureAttatched)
     {
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -109,7 +113,7 @@ class GameObject
 
 
 // Vertex
-var vertices = 
+var vertices =
 [
     // front side
     -0.5, 0.5, 0.5,     // Front-top-left
@@ -165,7 +169,7 @@ var vertices =
     -0.5, -0.5, -0.5,   // Back-bottom-left
     0.5, -0.5, -0.5,    // Back-bottom-right
 ];
-var normals = 
+var normals =
 [
     // front side
     0.0, 0.0, 1.0,
@@ -216,7 +220,7 @@ var normals =
     0.0, -1.0, 0.0,
 ];
 
-var texCoord = 
+var texCoord =
 [
 
     // front side
@@ -308,7 +312,7 @@ var normal_buff = createBuffer(normals);
 var box = new GameObject(prg,buff,vertices.length,normal_buff);
 
 // Lines
-var lineVertices = 
+var lineVertices =
 [
     0.5,0.0,0.0,
     -0.5,0.0,0.0,
@@ -494,6 +498,23 @@ var frameBuffs = [frameBuff_current,frameBuff_back];
 /*--------------------------------*/
 
 
+
+
+/*--------------------------------*/
+// wave_vel start
+/*--------------------------------*/
+var vertShader_wave_vel = createShader(gl,"wave_vel-vs",gl.VERTEX_SHADER);
+var fragShader_wave_vel = createShader(gl,"wave_vel-fs",gl.FRAGMENT_SHADER);
+var prg_wave_vel = createProgram(gl,vertShader_wave_vel,fragShader_wave_vel);
+
+var frameBuff_wave_vel = createFrameBufferAndTexture(_W,_H);
+/*--------------------------------*/
+// wave_vel end
+/*--------------------------------*/
+
+
+
+
 loading();
 
 
@@ -526,6 +547,7 @@ function loading()
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
         box.setUpTexture(image);
+        box.scale = 0.5;
 
 
         cancelAnimationFrame(callBackId);
@@ -546,10 +568,10 @@ function update()
     // camera
     var eyePos = vec3.create();
     //vec3.set(eyePos,2.5,2,3);
-    vec3.set(eyePos,-2.5,3,-0.5);
+    vec3.set(eyePos,-2.5,4.5,-0.5);
     var centerPos = vec3.create();
     //vec3.set(centerPos,0,0,0);
-    vec3.set(centerPos,-2.5,1,1.5-1.0);
+    vec3.set(centerPos,-2.5,0,2.5);
 
     // wheel actions
     vec3.add(eyePos,eyePos,[_wheelMoveOffs[0]*0.01,-_wheelMoveOffs[1]*0.01,0]);
@@ -576,14 +598,14 @@ function update()
 
 
     // clear all
-    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
 
 
 
 /*
-    
+
     box_wall.draw(vp,lightDir);
     gl.bindTexture(gl.TEXTURE_2D, frameBuffAndTex.texture);
     // draw box
@@ -599,7 +621,7 @@ function update()
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuff_input.frameBuffer);
     gl.useProgram(prg_input);
     gl.viewport(0, 0, _W, _H);
-    gl.clearColor(0.0,0.0,0.0,0.0);
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     setAttribute(gl,prg_input,vertBuff,"v_pos",3);
@@ -626,7 +648,7 @@ function update()
         gl.bindFramebuffer(gl.FRAMEBUFFER, currentBuff.frameBuffer);
         gl.useProgram(prg_wave);
         gl.viewport(0, 0, _W, _H);
-        gl.clearColor(0.0,0.0,0.0,0.0);
+        gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setAttribute(gl,prg_wave,vertBuff,"v_pos",3);
         gl.uniform2fv(gl.getUniformLocation(prg_wave,'u_resolution'), [_W,_H]);
@@ -646,6 +668,7 @@ function update()
         gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
         gl.flush();
         gl.bindTexture(gl.TEXTURE_2D, null);
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         /*------------------------*/
 
@@ -653,15 +676,101 @@ function update()
     /*------------------------*/
 
 
-    box.pos = [-4,0.5,2];
-    box.draw(vp,lightDir);
+
+
+
+
+
+
+
+
+    /*------------------------*/
+    // draw wave_vel to current texture
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuff_wave_vel.frameBuffer);
+    gl.useProgram(prg_wave_vel);
+
+    gl.viewport(0, 0, _W, _H);
+    gl.clearColor(BG_COLOR[0],BG_COLOR[1],BG_COLOR[2],1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    setAttribute(gl,prg_wave_vel,vertBuff,"v_pos",3);
+    gl.uniform2fv(gl.getUniformLocation(prg_wave_vel,'u_resolution'), [_W,_H]);
+
+    // from input texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, currentBuff.texture);
+    gl.uniform1i(gl.getUniformLocation(prg_wave_vel, 'texture'), 0);
+    setAttribute(gl,prg_wave_vel,texCoordBuff,"a_texCoord",2);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,vertices.length/3);
+    gl.flush();
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+
+
+
+    var vel = [0,0];
+    var loopCnt = 5;
+    for(var y=0;y<loopCnt;y++)
+    {
+        for(var x=0;x<loopCnt;x++)
+        {
+            var u8 = new Uint8Array(4);
+            var cococo = gl.readPixels(myPos[0]*_W, myPos[1]*_H, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, u8);
+            vel[0] += u8[0];
+            vel[1] += u8[1];
+        }
+    }
+    vel[0] = vel[0] / (loopCnt*loopCnt) - 128;
+    vel[1] = vel[1] / (loopCnt*loopCnt) - 128;
+
+    myVel[0] = vel[0] * 0.00007;
+    myVel[1] = vel[1] * 0.00007;
+    myPos[0] += myVel[0];
+    myPos[1] += myVel[1];
+
+    box.rot = [0,0,0];
+
+
+
+    if(myPos[0] < 0)
+        myPos[0] =0;
+    if(myPos[0] > _W)
+        myPos[0] = _W;
+
+    if(myPos[1] < 0)
+        myPos[1] = 0;
+    if(myPos[1] > _H)
+        myPos[1] = _H;
+
+
+
+    // draw box
+    var bx = -myPos[0] * 5;
+    var by = myPos[1] * 5;
+
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+
+
+
+    /*------------------------*/
+
+
+
+
+
+
+
+
 
     // Plane
     gl.useProgram(prg_plane);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuff_plane);
     var world_plane = mat4.create();
     var wvp_plane = mat4.create();
-    mat4.scale(world_plane,world_plane,[4,4,4]);
+    mat4.scale(world_plane,world_plane,[5,5,5]);
     mat4.rotate(world_plane,world_plane,glMatrix.toRadian(90),[1,0,0])
     mat4.rotate(world_plane,world_plane,glMatrix.toRadian(180),[0,1,0])
 
@@ -679,6 +788,14 @@ function update()
     gl.uniform3f(gl.getUniformLocation(prg_plane,"u_color"),0,1,0);
     setAttribute(gl,prg_plane,buff_plane,"v_pos",3);
     gl.drawElements(gl.TRIANGLES, indexes_plane.length, gl.UNSIGNED_SHORT, 0);
+
+
+
+
+
+    box.pos = [bx,0,by];
+    box.draw(vp,lightDir);
+
 
 
 
@@ -708,7 +825,7 @@ function createShader(gl,id,type)
 
     if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
         alert(gl.getShaderInfoLog(shader));
-    
+
     return shader;
 }
 
@@ -760,18 +877,18 @@ function createFrameBufferAndTexture(w,h)
         var texture = gl.createTexture();
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        
+
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-        
+
         // unbind
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        
+
         return {
             frameBuffer: frameBuffer,
             texture: texture
@@ -869,7 +986,7 @@ function onMouseDown(e) {
         __wheelDownPos[1] = e.clientY;
         __wheelDownNow = true;
     }
-    
+
 }
 function onMouseUp() {
     __mouseDownNow = false;
