@@ -19,7 +19,7 @@ var COLOR_BLUE = [0,0,1,1];
 var _mouseMoveOffs = mat4.create(); // matrix for mousemove camera
 var _wheelScrollOffs = 1; // float for mousemove wheel camera
 var _wheelMoveOffs = [0,0]; // vec2 for wheelmove camera
-var BG_COLOR = [0.61,0.45,0.15];
+var BG_COLOR = [0.11,0.65,0.65];
 var cnt = 0;
 var mouseX=0,mouseY=0;
 var mouseClick = 0;
